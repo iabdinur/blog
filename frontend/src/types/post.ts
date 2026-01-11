@@ -16,8 +16,6 @@ export interface Post {
   likes: number
   commentsCount: number
   isPublished: boolean
-  seoTitle?: string
-  seoDescription?: string
 }
 
 export interface PostMeta {

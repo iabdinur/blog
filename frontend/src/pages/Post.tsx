@@ -1,6 +1,10 @@
 import { Box, Flex, Spinner, Center, Text } from '@chakra-ui/react'
+import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { usePost } from '@/api/posts'
+import { useComments } from '@/api/comments'
+import { postsApi } from '@/api/posts'
+import { useQueryClient } from '@tanstack/react-query'
 import { PostDetail } from '@/components/blog/PostDetail'
 import { PostShare } from '@/components/blog/PostShare'
 import { PostReactions } from '@/components/blog/PostReactions'
@@ -12,6 +16,22 @@ import { Layout } from '@/components/layout/Layout'
 export const Post = () => {
   const { slug } = useParams<{ slug: string }>()
   const { data: post, isLoading, error } = usePost(slug || '')
+  const { data: comments } = useComments(slug || '')
+  const queryClient = useQueryClient()
+  const viewedPosts = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (slug && post && !viewedPosts.current.has(slug)) {
+      viewedPosts.current.add(slug)
+      // Increment views when post is loaded (only once per post per session)
+      postsApi.incrementViews(slug).then(() => {
+        // Refresh post data to get updated view count
+        queryClient.invalidateQueries({ queryKey: ['post', slug] })
+      }).catch(() => {
+        // Silently fail if view increment fails
+      })
+    }
+  }, [slug, post, queryClient])
 
   if (isLoading) {
     return (
@@ -40,7 +60,7 @@ export const Post = () => {
         <PostDetail post={post} />
         <Box mt={8} pt={8} borderTop="1px" borderColor="gray.200" _dark={{ borderColor: 'gray.700' }}>
           <Flex justify="space-between" align="center" mb={6}>
-            <PostReactions post={post} />
+            <PostReactions post={post} commentsCount={comments?.length} />
             <PostShare post={post} />
           </Flex>
         </Box>

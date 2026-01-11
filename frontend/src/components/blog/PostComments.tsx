@@ -1,9 +1,10 @@
 import { Box, VStack, Heading, Textarea, Button, HStack, Text, useToast } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Comment } from '@/types'
 import { useComments, useCreateComment } from '@/api/comments'
 import { PostAuthor } from './PostAuthor'
 import { formatRelativeTime } from '@/utils/date'
+import { CreateProfilePopup } from '@/components/ui/CreateProfilePopup'
 
 export interface PostCommentsProps {
   slug: string
@@ -36,15 +37,45 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
   const { data: comments, isLoading } = useComments(slug)
   const createComment = useCreateComment()
   const [content, setContent] = useState('')
+  const [showProfilePopup, setShowProfilePopup] = useState(false)
+  const [authorId, setAuthorId] = useState<string | null>(null)
+  const [pendingComment, setPendingComment] = useState<string | null>(null)
   const toast = useToast()
+
+  useEffect(() => {
+    // Check if user has a profile stored
+    const storedAuthor = localStorage.getItem('commentAuthor')
+    if (storedAuthor) {
+      try {
+        const author = JSON.parse(storedAuthor)
+        setAuthorId(author.id.toString())
+      } catch (error) {
+        console.error('Failed to parse stored author:', error)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
 
+    // Check if user has a profile
+    if (!authorId) {
+      // Store the comment content and show profile popup
+      setPendingComment(content)
+      setShowProfilePopup(true)
+      return
+    }
+
+    // User has profile, post the comment
+    await postComment(content, authorId)
+  }
+
+  const postComment = async (commentContent: string, commentAuthorId: string) => {
     try {
-      await createComment.mutateAsync({ slug, content, authorId: '1' })
+      await createComment.mutateAsync({ slug, content: commentContent, authorId: commentAuthorId })
       setContent('')
+      setPendingComment(null)
       toast({
         title: 'Comment posted',
         status: 'success',
@@ -59,10 +90,20 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
     }
   }
 
+  const handleProfileCreated = (newAuthorId: string) => {
+    setAuthorId(newAuthorId)
+    setShowProfilePopup(false)
+    
+    // Post the pending comment if there is one
+    if (pendingComment) {
+      postComment(pendingComment, newAuthorId)
+    }
+  }
+
   const topLevelComments = comments?.filter((c) => !c.parentId) || []
 
   return (
-    <Box mt={8}>
+    <Box mt={8} id="comments-section">
       <Heading size="md" mb={4}>
         Comments ({comments?.length || 0})
       </Heading>
@@ -78,12 +119,21 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
             />
             <HStack justify="flex-end">
               <Button type="submit" isLoading={createComment.isPending} colorScheme="brand">
-                Post Comment
+                Post
               </Button>
             </HStack>
           </VStack>
         </form>
       </Box>
+
+      <CreateProfilePopup
+        isOpen={showProfilePopup}
+        onClose={() => {
+          setShowProfilePopup(false)
+          setPendingComment(null)
+        }}
+        onSuccess={handleProfileCreated}
+      />
 
       {isLoading ? (
         <Text>Loading comments...</Text>

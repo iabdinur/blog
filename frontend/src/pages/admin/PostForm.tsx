@@ -50,8 +50,6 @@ export const PostForm = () => {
     tagIds: [] as string[],
     isPublished: false,
     readingTime: 0,
-    seoTitle: '',
-    seoDescription: '',
   })
 
   useEffect(() => {
@@ -66,8 +64,6 @@ export const PostForm = () => {
         tagIds: existingPost.tags?.map((t) => t.id) || [],
         isPublished: existingPost.isPublished || false,
         readingTime: existingPost.readingTime || 0,
-        seoTitle: existingPost.seoTitle || '',
-        seoDescription: existingPost.seoDescription || '',
       })
     }
   }, [existingPost])
@@ -189,25 +185,6 @@ export const PostForm = () => {
                 value={formData.readingTime}
                 onChange={(e) => setFormData({ ...formData, readingTime: parseInt(e.target.value) || 0 })}
                 placeholder="5"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>SEO Title</FormLabel>
-              <Input
-                value={formData.seoTitle}
-                onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
-                placeholder="SEO title"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>SEO Description</FormLabel>
-              <Textarea
-                value={formData.seoDescription}
-                onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
-                placeholder="SEO description"
-                rows={2}
               />
             </FormControl>
 

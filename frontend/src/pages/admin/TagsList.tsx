@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { VStack, Heading, Box, Button, Table, Thead, Tbody, Tr, Th, Td, IconButton, HStack, useColorModeValue, Text } from '@chakra-ui/react'
 import { useTags } from '@/api/tags'
 import { useDeleteTag } from '@/api/admin'
-import { FaEdit, FaTrash } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'
 import { AdminLayout } from './AdminLayout'
 
 export const TagsList = () => {
@@ -26,7 +26,7 @@ export const TagsList = () => {
         <HStack justify="space-between">
           <Heading size="lg" color={textColor}>Tags (Series)</Heading>
           <Link to="/admin/tags/new">
-            <Button colorScheme="blue">Create New Tag</Button>
+            <Button colorScheme="blue" leftIcon={<FaPlus />}>New Tag</Button>
           </Link>
         </HStack>
 

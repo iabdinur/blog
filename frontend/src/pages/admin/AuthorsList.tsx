@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { VStack, Heading, Box, Button, Table, Thead, Tbody, Tr, Th, Td, IconButton, HStack, useColorModeValue, Text } from '@chakra-ui/react'
 import { useAuthors, useDeleteAuthor } from '@/api/admin'
-import { FaEdit, FaTrash } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'
 import { AdminLayout } from './AdminLayout'
 
 export const AuthorsList = () => {
@@ -25,7 +25,7 @@ export const AuthorsList = () => {
         <HStack justify="space-between">
           <Heading size="lg" color={textColor}>Authors</Heading>
           <Link to="/admin/authors/new">
-            <Button colorScheme="blue">Create New Author</Button>
+            <Button colorScheme="blue" leftIcon={<FaPlus />}>New Author</Button>
           </Link>
         </HStack>
 

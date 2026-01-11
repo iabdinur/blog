@@ -121,6 +121,9 @@ export const Navbar = () => {
                     <MenuItem as={RouterLink} to="/series/uiuc-mcs">
                       UIUC MCS
                     </MenuItem>
+                    <MenuItem as={RouterLink} to="/series/software-engineering">
+                      Software Engineering
+                    </MenuItem>
                   </MenuList>
                 </>
               )}
@@ -205,6 +208,9 @@ export const Navbar = () => {
             </Link>
             <Link as={RouterLink} to="/series/uiuc-mcs" onClick={onToggle} pl={4}>
               UIUC MCS
+            </Link>
+            <Link as={RouterLink} to="/series/software-engineering" onClick={onToggle} pl={4}>
+              Software Engineering
             </Link>
           </Stack>
         </Box>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.iabdinur.journey.AuthenticationIT
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.628 s -- in com.iabdinur.journey.AuthenticationIT

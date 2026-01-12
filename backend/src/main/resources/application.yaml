@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: blog-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/blog
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+server:
+  port: 8080

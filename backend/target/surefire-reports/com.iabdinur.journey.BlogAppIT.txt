@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.iabdinur.journey.BlogAppIT
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.784 s -- in com.iabdinur.journey.BlogAppIT

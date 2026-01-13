@@ -85,16 +85,31 @@ CREATE TABLE comments
     CONSTRAINT comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
--- Create accounts table (admin authentication)
--- Note: BIGSERIAL automatically creates the sequence accounts_id_seq
-CREATE TABLE accounts
+-- Create users table (authentication)
+-- Note: BIGSERIAL automatically creates the sequence users_id_seq
+CREATE TABLE users
 (
-    id         BIGSERIAL PRIMARY KEY,
-    username   TEXT NOT NULL,
-    password   TEXT NOT NULL,
-    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT accounts_username_unique UNIQUE (username)
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT NOT NULL,
+    email           TEXT NOT NULL,
+    password        TEXT NOT NULL,
+    profile_image_id TEXT,
+    created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT user_email_unique UNIQUE (email),
+    CONSTRAINT profile_image_id_unique UNIQUE (profile_image_id)
+);
+
+-- Create verification_codes table
+CREATE TABLE verification_codes
+(
+    id              BIGSERIAL PRIMARY KEY,
+    email           TEXT NOT NULL,
+    hashed_code     TEXT NOT NULL,
+    created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    attempts        INTEGER NOT NULL DEFAULT 0,
+    is_used         BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for better query performance
@@ -109,4 +124,7 @@ CREATE INDEX idx_comments_author_id ON comments(author_id);
 CREATE INDEX idx_comments_parent_id ON comments(parent_id);
 CREATE INDEX idx_tags_slug ON tags(slug);
 CREATE INDEX idx_authors_username ON authors(username);
-CREATE INDEX idx_accounts_username ON accounts(username);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_verification_codes_email ON verification_codes(email);
+CREATE INDEX idx_verification_codes_expires_at ON verification_codes(expires_at);
+CREATE INDEX idx_verification_codes_email_created ON verification_codes(email, created_at);

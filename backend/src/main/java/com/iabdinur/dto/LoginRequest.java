@@ -1,7 +1,7 @@
 package com.iabdinur.dto;
 
 public record LoginRequest(
-    String username,
+    String email,
     String password
 ) {}
 

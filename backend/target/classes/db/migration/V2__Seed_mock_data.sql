@@ -1,14 +1,16 @@
 -- Seed mock data for development
 
--- Insert Admin Account
+-- Insert Admin User
 -- Password: password (BCrypt hash)
-INSERT INTO accounts (username, password, created_at, updated_at)
+INSERT INTO users (name, email, password, created_at, updated_at)
 VALUES (
+    'Ibrahim Abdinur',
     'iabdinur@icloud.com',
     '$2a$10$JWw/S/0M1sZ4TbXioV/lv.JA6lO.aaaBP0qFl3asEseEgMITP0DK6',
     '2024-01-01 00:00:00',
     '2024-01-01 00:00:00'
-);
+)
+ON CONFLICT (email) DO NOTHING;
 
 -- Insert Author
 INSERT INTO authors (name, username, email, bio, avatar, website, twitter, github, linkedin, followers_count, following_count, posts_count, joined_at, created_at, updated_at)

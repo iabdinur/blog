@@ -2,11 +2,11 @@ package com.iabdinur.journey;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iabdinur.AbstractTestcontainers;
-import com.iabdinur.dao.AccountDao;
+import com.iabdinur.dao.UserDao;
 import com.iabdinur.dao.AuthorDao;
 import com.iabdinur.dao.TagDao;
 import com.iabdinur.dto.*;
-import com.iabdinur.model.Account;
+import com.iabdinur.model.User;
 import com.iabdinur.model.Author;
 import com.iabdinur.model.Tag;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,7 @@ class BlogAppIT extends AbstractTestcontainers {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private AccountDao accountDao;
+    private UserDao userDao;
 
     @Autowired
     private AuthorDao authorDao;
@@ -46,7 +46,7 @@ class BlogAppIT extends AbstractTestcontainers {
     private TagDao tagDao;
 
     @Autowired
-    private com.iabdinur.service.AccountService accountService;
+    private com.iabdinur.service.UserService userService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -59,28 +59,29 @@ class BlogAppIT extends AbstractTestcontainers {
         jdbcTemplate.execute("DELETE FROM posts");
         jdbcTemplate.execute("DELETE FROM tags");
         jdbcTemplate.execute("DELETE FROM authors");
-        jdbcTemplate.execute("DELETE FROM accounts");
+        jdbcTemplate.execute("DELETE FROM users");
     }
 
-    // Helper class to return both account and plain password
-    private static class TestAccount {
-        final Account account;
+    // Helper class to return both user and plain password
+    private static class TestUser {
+        final User user;
         final String plainPassword;
         
-        TestAccount(Account account, String plainPassword) {
-            this.account = account;
+        TestUser(User user, String plainPassword) {
+            this.user = user;
             this.plainPassword = plainPassword;
         }
     }
     
-    private TestAccount createTestAccount() {
-        String username = FAKER.internet().emailAddress();
+    private TestUser createTestUser() {
+        String name = FAKER.name().fullName();
+        String email = FAKER.internet().emailAddress();
         String password = FAKER.internet().password();
-        // Use AccountService to ensure password is hashed
-        accountService.createAccount(username, password);
-        Account account = accountDao.selectAccountByUsername(username)
+        // Use UserService to ensure password is hashed
+        userService.createUser(name, email, password);
+        User user = userDao.selectUserByEmail(email)
                 .orElseThrow();
-        return new TestAccount(account, password);
+        return new TestUser(user, password);
     }
 
     private Author createTestAuthor() {
@@ -132,11 +133,11 @@ class BlogAppIT extends AbstractTestcontainers {
         }
 
         // ========== STEP 1: Login Experience ==========
-        // Given - Create an account
-        TestAccount testAccount = createTestAccount();
-        Account account = testAccount.account;
+        // Given - Create a user
+        TestUser testUser = createTestUser();
+        User user = testUser.user;
         com.iabdinur.dto.AuthenticationRequest authRequest = new com.iabdinur.dto.AuthenticationRequest(
-                account.getUsername(), testAccount.plainPassword);
+                user.getEmail(), testUser.plainPassword);
 
         // When - Login using new authentication endpoint
         String loginResponseJson = mockMvc.perform(post("/api/v1/auth/login")
@@ -144,7 +145,7 @@ class BlogAppIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.account.username").value(account.getUsername()))
+                .andExpect(jsonPath("$.user.email").value(user.getEmail()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -154,7 +155,7 @@ class BlogAppIT extends AbstractTestcontainers {
 
         // Then - Verify login was successful
         assertThat(authToken).isNotNull();
-        assertThat(authResponse.account().username()).isEqualTo(account.getUsername());
+        assertThat(authResponse.user().email()).isEqualTo(user.getEmail());
 
         // ========== STEP 2: Create Tag ==========
         // Given - Tag creation request
@@ -418,7 +419,7 @@ class BlogAppIT extends AbstractTestcontainers {
         );
 
         // When & Then - Login should fail
-        mockMvc.perform(post("/api/v1/accounts/login")
+        mockMvc.perform(post("/api/v1/users/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidLoginRequest)))
                 .andExpect(status().isUnauthorized());
@@ -519,10 +520,10 @@ class BlogAppIT extends AbstractTestcontainers {
         }
 
         // ========== STEP 1: Login as Admin ==========
-        TestAccount testAdminAccount = createTestAccount();
-        Account adminAccount = testAdminAccount.account;
+        TestUser testAdminUser = createTestUser();
+        User adminUser = testAdminUser.user;
         com.iabdinur.dto.AuthenticationRequest authRequest = new com.iabdinur.dto.AuthenticationRequest(
-                adminAccount.getUsername(), testAdminAccount.plainPassword);
+                adminUser.getEmail(), testAdminUser.plainPassword);
 
         String loginResponseJson = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

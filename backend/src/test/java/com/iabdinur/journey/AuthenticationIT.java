@@ -3,10 +3,10 @@ package com.iabdinur.journey;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import com.iabdinur.AbstractTestcontainers;
-import com.iabdinur.dto.AccountDTO;
-import com.iabdinur.dto.AccountRegistrationRequest;
 import com.iabdinur.dto.AuthenticationRequest;
 import com.iabdinur.dto.AuthenticationResponse;
+import com.iabdinur.dto.UserDTO;
+import com.iabdinur.dto.UserRegistrationRequest;
 import com.iabdinur.util.JWTUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,28 +44,30 @@ class AuthenticationIT extends AbstractTestcontainers {
     private JdbcTemplate jdbcTemplate;
 
     private static final String AUTHENTICATION_PATH = "/api/v1/auth";
-    private static final String ACCOUNT_PATH = "/api/v1/accounts";
+    private static final String USER_PATH = "/api/v1/users";
 
     @BeforeEach
     void setUp() {
         // Clean up after each test
-        jdbcTemplate.execute("DELETE FROM accounts");
+        jdbcTemplate.execute("DELETE FROM users");
     }
 
     @Test
     void canLogin() throws Exception {
         // Given
         Faker faker = new Faker();
-        String username = faker.internet().emailAddress();
+        String name = faker.name().fullName();
+        String email = faker.internet().emailAddress();
         String password = "password";
 
-        AccountRegistrationRequest accountRegistrationRequest = new AccountRegistrationRequest(
-                username,
+        UserRegistrationRequest userRegistrationRequest = new UserRegistrationRequest(
+                name,
+                email,
                 password
         );
 
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
-                username,
+                email,
                 password
         );
 
@@ -76,13 +78,13 @@ class AuthenticationIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(authenticationRequest)))
                 .andExpect(status().isUnauthorized());
 
-        // Register account
-        mockMvc.perform(post(ACCOUNT_PATH)
+        // Register user
+        mockMvc.perform(post(USER_PATH)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(accountRegistrationRequest)))
+                        .content(objectMapper.writeValueAsString(userRegistrationRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value(username))
+                .andExpect(jsonPath("$.email").value(email))
                 .andExpect(jsonPath("$.id").exists());
 
         // Login after registration - should succeed
@@ -92,7 +94,7 @@ class AuthenticationIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(authenticationRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.account.username").value(username))
+                .andExpect(jsonPath("$.user.email").value(email))
                 .andReturn();
 
         // Extract JWT token from Authorization header
@@ -106,15 +108,15 @@ class AuthenticationIT extends AbstractTestcontainers {
                 AuthenticationResponse.class
         );
 
-        AccountDTO accountDTO = authenticationResponse.account();
+        UserDTO userDTO = authenticationResponse.user();
 
         // Verify JWT token is valid
-        assertThat(jwtUtil.isTokenValid(jwtToken, accountDTO.username())).isTrue();
+        assertThat(jwtUtil.isTokenValid(jwtToken, userDTO.email())).isTrue();
 
-        // Verify account details
-        assertThat(accountDTO.username()).isEqualTo(username);
-        assertThat(accountDTO.id()).isNotNull();
-        assertThat(accountDTO.createdAt()).isNotNull();
-        assertThat(accountDTO.updatedAt()).isNotNull();
+        // Verify user details
+        assertThat(userDTO.email()).isEqualTo(email);
+        assertThat(userDTO.id()).isNotNull();
+        assertThat(userDTO.createdAt()).isNotNull();
+        assertThat(userDTO.updatedAt()).isNotNull();
     }
 }

@@ -1,9 +1,10 @@
 package com.iabdinur.service;
 
-import com.iabdinur.dto.AccountDTO;
 import com.iabdinur.dto.AuthenticationRequest;
 import com.iabdinur.dto.AuthenticationResponse;
-import com.iabdinur.mapper.AccountDTOMapper;
+import com.iabdinur.dto.UserDTO;
+import com.iabdinur.mapper.UserDTOMapper;
+import com.iabdinur.model.User;
 import com.iabdinur.util.JWTUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,14 +20,14 @@ import java.util.Collections;
 public class AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
-    private final AccountDTOMapper accountDTOMapper;
+    private final UserDTOMapper userDTOMapper;
     private final JWTUtil jwtUtil;
 
     public AuthenticationService(AuthenticationManager authenticationManager,
-                                 AccountDTOMapper accountDTOMapper,
+                                 UserDTOMapper userDTOMapper,
                                  JWTUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
-        this.accountDTOMapper = accountDTOMapper;
+        this.userDTOMapper = userDTOMapper;
         this.jwtUtil = jwtUtil;
     }
 
@@ -34,14 +35,14 @@ public class AuthenticationService {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.username(),
+                            request.email(),
                             request.password()
                     )
             );
-            com.iabdinur.model.AccountUserDetails principal = (com.iabdinur.model.AccountUserDetails) authentication.getPrincipal();
-            AccountDTO accountDTO = accountDTOMapper.apply(principal.getAccount());
-            String token = jwtUtil.issueToken(accountDTO.username(), Collections.emptyList());
-            return new AuthenticationResponse(token, accountDTO);
+            User principal = (User) authentication.getPrincipal();
+            UserDTO userDTO = userDTOMapper.apply(principal);
+            String token = jwtUtil.issueToken(userDTO.email(), Collections.emptyList());
+            return new AuthenticationResponse(token, userDTO);
         } catch (BadCredentialsException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }

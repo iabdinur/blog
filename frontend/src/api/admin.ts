@@ -4,20 +4,24 @@ import { apiClient } from './client'
 // Account API
 export const accountApi = {
   login: async (username: string, password: string) => {
-    const response = await apiClient.post('/accounts/login', { username, password })
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token)
+    const response = await apiClient.post('/users/login', { email: username, password })
+    // Extract token from Authorization header
+    const token = response.headers['authorization'] || response.headers['Authorization']
+    if (token) {
+      localStorage.setItem('auth_token', token)
     }
     return response.data
   },
   sendVerificationCode: async (email: string) => {
-    const response = await apiClient.post('/accounts/send-code', { email })
+    const response = await apiClient.post('/users/send-code', { email })
     return response.data
   },
   verifyCode: async (email: string, code: string) => {
-    const response = await apiClient.post('/accounts/verify-code', { email, code })
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token)
+    const response = await apiClient.post('/users/verify-code', { email, code })
+    // Extract token from Authorization header
+    const token = response.headers['authorization'] || response.headers['Authorization']
+    if (token) {
+      localStorage.setItem('auth_token', token)
     }
     return response.data
   },

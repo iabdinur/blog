@@ -9,7 +9,6 @@ import { PostDetail } from '@/components/blog/PostDetail'
 import { PostShare } from '@/components/blog/PostShare'
 import { PostReactions } from '@/components/blog/PostReactions'
 import { PostComments } from '@/components/blog/PostComments'
-import { TableOfContents } from '@/components/blog/TableOfContents'
 import { ReadingProgress } from '@/components/blog/ReadingProgress'
 import { Layout } from '@/components/layout/Layout'
 

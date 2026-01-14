@@ -13,12 +13,16 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Avatar,
 } from '@chakra-ui/react'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
 import { FaBars, FaTimes, FaEnvelope, FaChevronDown } from 'react-icons/fa'
 import { CiSearch } from 'react-icons/ci'
+import { FiLogIn } from 'react-icons/fi'
 import { ThemeToggleButton } from './ThemeToggleButton'
 import { useUIStore } from '@/store/useUIStore'
+import { LoginRegisterModal } from '@/components/ui/LoginRegisterModal'
+import { useState, useEffect } from 'react'
 
 export const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure()
@@ -27,7 +31,50 @@ export const Navbar = () => {
   const location = useLocation()
   const bg = useColorModeValue('white', 'gray.900')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = localStorage.getItem('auth_token')
+        setIsAuthenticated(!!token)
+        // Try to get user email from token if needed
+        if (token) {
+          try {
+            // JWT token payload (simple decode, not verified - just for display)
+            const parts = token.split('.')
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]))
+              setUserEmail(payload.sub || payload.username || null)
+            } else {
+              setUserEmail(null)
+            }
+          } catch (e) {
+            // If token decode fails, just use authenticated state
+            setUserEmail(null)
+          }
+        } else {
+          setUserEmail(null)
+        }
+      } catch (error) {
+        // Handle any localStorage errors
+        setIsAuthenticated(false)
+        setUserEmail(null)
+      }
+    }
+    checkAuth()
+    // Listen for storage changes (e.g., when user logs in from another tab)
+    window.addEventListener('storage', checkAuth)
+    // Also check on focus in case token was set in same tab
+    window.addEventListener('focus', checkAuth)
+    return () => {
+      window.removeEventListener('storage', checkAuth)
+      window.removeEventListener('focus', checkAuth)
+    }
+  }, [])
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
@@ -39,6 +86,33 @@ export const Navbar = () => {
 
   const handleSubscribeClick = () => {
     setNewsletterPopupOpen(true)
+  }
+
+  const handleLoginClick = () => {
+    setShowLoginModal(true)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    setIsAuthenticated(false)
+    setUserEmail(null)
+  }
+
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true)
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      try {
+        const parts = token.split('.')
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]))
+          setUserEmail(payload.sub || payload.username || null)
+        }
+      } catch (e) {
+        // Ignore decode errors
+        setUserEmail(null)
+      }
+    }
   }
 
   return (
@@ -150,6 +224,42 @@ export const Navbar = () => {
           >
             Subscribe
           </Button>
+          {isAuthenticated ? (
+            <Menu>
+              <MenuButton
+                as={IconButton}
+                aria-label="User menu"
+                icon={
+                  <Avatar
+                    size="sm"
+                    name={userEmail || 'User'}
+                    src={userEmail ? `/api/v1/users/${encodeURIComponent(userEmail)}/profile-image` : undefined}
+                    onError={() => {
+                      // Silently fail if image can't load
+                    }}
+                  />
+                }
+                variant="ghost"
+                borderRadius="full"
+              />
+              <MenuList>
+                <MenuItem onClick={() => navigate('/profile-settings')}>
+                  Profile Settings
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  Logout
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          ) : (
+            <IconButton
+              aria-label="Login"
+              icon={<FiLogIn />}
+              variant="ghost"
+              onClick={handleLoginClick}
+              display={{ base: 'none', md: 'flex' }}
+            />
+          )}
 
           <IconButton
             display={{ base: 'flex', md: 'none' }}
@@ -212,9 +322,54 @@ export const Navbar = () => {
             <Link as={RouterLink} to="/series/software-engineering" onClick={onToggle} pl={4}>
               Software Engineering
             </Link>
+            <HStack spacing={4} pt={4} borderTop="1px" borderColor={borderColor}>
+              {isAuthenticated ? (
+                <>
+                  <Link as={RouterLink} to="/profile-settings" onClick={onToggle}>
+                    Profile Settings
+                  </Link>
+                  <Link onClick={() => { handleLogout(); onToggle(); }}>
+                    Logout
+                  </Link>
+                </>
+              ) : (
+                <Button
+                  leftIcon={<FiLogIn />}
+                  onClick={() => {
+                    handleLoginClick()
+                    onToggle()
+                  }}
+                  variant="outline"
+                  size="sm"
+                  w="full"
+                >
+                  Login
+                </Button>
+              )}
+              <Button
+                leftIcon={<FaEnvelope />}
+                onClick={() => {
+                  handleSubscribeClick()
+                  onToggle()
+                }}
+                bg="brand.600"
+                color="white"
+                _hover={{ bg: 'brand.700' }}
+                size="sm"
+                w="full"
+              >
+                Subscribe
+              </Button>
+            </HStack>
           </Stack>
         </Box>
       )}
+
+      <LoginRegisterModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </Box>
   )
 }

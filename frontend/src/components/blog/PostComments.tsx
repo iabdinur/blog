@@ -4,7 +4,7 @@ import { Comment } from '@/types'
 import { useComments, useCreateComment } from '@/api/comments'
 import { PostAuthor } from './PostAuthor'
 import { formatRelativeTime } from '@/utils/date'
-import { CreateProfilePopup } from '@/components/ui/CreateProfilePopup'
+import { LoginRegisterModal } from '@/components/ui/LoginRegisterModal'
 
 export interface PostCommentsProps {
   slug: string
@@ -37,43 +37,44 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
   const { data: comments, isLoading } = useComments(slug)
   const createComment = useCreateComment()
   const [content, setContent] = useState('')
-  const [showProfilePopup, setShowProfilePopup] = useState(false)
-  const [authorId, setAuthorId] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [pendingComment, setPendingComment] = useState<string | null>(null)
   const toast = useToast()
 
   useEffect(() => {
-    // Check if user has a profile stored
-    const storedAuthor = localStorage.getItem('commentAuthor')
-    if (storedAuthor) {
-      try {
-        const author = JSON.parse(storedAuthor)
-        setAuthorId(author.id.toString())
-      } catch (error) {
-        console.error('Failed to parse stored author:', error)
-      }
+    // Check if user is authenticated (has JWT token)
+    const checkAuth = () => {
+      const token = localStorage.getItem('auth_token')
+      setIsAuthenticated(!!token)
     }
+    checkAuth()
+    // Listen for storage changes (e.g., when user logs in from another tab)
+    window.addEventListener('storage', checkAuth)
+    return () => window.removeEventListener('storage', checkAuth)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
 
-    // Check if user has a profile
-    if (!authorId) {
-      // Store the comment content and show profile popup
+    // Check if user is authenticated
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      // Store the comment and show login modal
       setPendingComment(content)
-      setShowProfilePopup(true)
+      setShowLoginModal(true)
       return
     }
 
-    // User has profile, post the comment
-    await postComment(content, authorId)
+    // User is authenticated, post the comment
+    await postComment(content)
   }
 
-  const postComment = async (commentContent: string, commentAuthorId: string) => {
+  const postComment = async (commentContent: string) => {
     try {
-      await createComment.mutateAsync({ slug, content: commentContent, authorId: commentAuthorId })
+      // Backend extracts authorId from JWT token automatically
+      await createComment.mutateAsync({ slug, content: commentContent })
       setContent('')
       setPendingComment(null)
       toast({
@@ -81,22 +82,22 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
         status: 'success',
         duration: 3000,
       })
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error?.response?.data || error?.message || 'Failed to post comment'
       toast({
-        title: 'Failed to post comment',
+        title: error?.response?.status === 401 ? 'Authentication required' : 'Failed to post comment',
+        description: typeof errorMessage === 'string' ? errorMessage : 'Please login to post comments',
         status: 'error',
         duration: 3000,
       })
     }
   }
 
-  const handleProfileCreated = (newAuthorId: string) => {
-    setAuthorId(newAuthorId)
-    setShowProfilePopup(false)
-    
-    // Post the pending comment if there is one
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true)
+    // If there's a pending comment, post it now
     if (pendingComment) {
-      postComment(pendingComment, newAuthorId)
+      postComment(pendingComment)
     }
   }
 
@@ -118,7 +119,11 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
               rows={4}
             />
             <HStack justify="flex-end">
-              <Button type="submit" isLoading={createComment.isPending} colorScheme="brand">
+              <Button 
+                type="submit" 
+                isLoading={createComment.isPending} 
+                colorScheme="brand"
+              >
                 Post
               </Button>
             </HStack>
@@ -126,13 +131,13 @@ export const PostComments = ({ slug }: PostCommentsProps) => {
         </form>
       </Box>
 
-      <CreateProfilePopup
-        isOpen={showProfilePopup}
+      <LoginRegisterModal
+        isOpen={showLoginModal}
         onClose={() => {
-          setShowProfilePopup(false)
+          setShowLoginModal(false)
           setPendingComment(null)
         }}
-        onSuccess={handleProfileCreated}
+        onSuccess={handleAuthSuccess}
       />
 
       {isLoading ? (

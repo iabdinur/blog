@@ -7,11 +7,10 @@ export const commentsApi = {
     const { data } = await apiClient.get<Comment[]>(`/posts/${slug}/comments`)
     return data
   },
-  create: async (slug: string, content: string, authorId: string, parentId?: string) => {
+  create: async (slug: string, content: string, parentId?: string) => {
     const { data } = await apiClient.post<Comment>(`/posts/${slug}/comments`, { 
       content, 
-      authorId,
-      parentId 
+      parentId: parentId || null
     })
     return data
   },
@@ -31,8 +30,8 @@ export const useComments = (slug: string) => {
 export const useCreateComment = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ slug, content, authorId, parentId }: { slug: string; content: string; authorId: string; parentId?: string }) =>
-      commentsApi.create(slug, content, authorId, parentId),
+    mutationFn: ({ slug, content, parentId }: { slug: string; content: string; parentId?: string }) =>
+      commentsApi.create(slug, content, parentId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.slug] })
     },

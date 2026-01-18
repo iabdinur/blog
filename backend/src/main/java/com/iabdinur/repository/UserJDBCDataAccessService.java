@@ -30,7 +30,7 @@ public class UserJDBCDataAccessService implements UserDao {
     @Override
     public List<User> selectAllUsers() {
         var sql = """
-                SELECT id, name, email, password, created_at, updated_at, profile_image_id
+                SELECT id, name, email, password, user_type, created_at, updated_at, profile_image_id
                 FROM users
                 LIMIT 1000
                 """;
@@ -40,7 +40,7 @@ public class UserJDBCDataAccessService implements UserDao {
     @Override
     public Optional<User> selectUserById(Long userId) {
         var sql = """
-                SELECT id, name, email, password, created_at, updated_at, profile_image_id
+                SELECT id, name, email, password, user_type, created_at, updated_at, profile_image_id
                 FROM users
                 WHERE id = ?
                 """;
@@ -52,8 +52,8 @@ public class UserJDBCDataAccessService implements UserDao {
     @Override
     public void insertUser(User user) {
         var sql = """
-                INSERT INTO users(name, email, password, created_at, updated_at, profile_image_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO users(name, email, password, user_type, created_at, updated_at, profile_image_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -61,9 +61,10 @@ public class UserJDBCDataAccessService implements UserDao {
             ps.setString(1, user.getName());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getPassword());
-            ps.setTimestamp(4, Timestamp.valueOf(user.getCreatedAt()));
-            ps.setTimestamp(5, Timestamp.valueOf(user.getUpdatedAt()));
-            ps.setString(6, user.getProfileImageId());
+            ps.setString(4, user.getUserType() != null ? user.getUserType().name() : "REA");
+            ps.setTimestamp(5, Timestamp.valueOf(user.getCreatedAt()));
+            ps.setTimestamp(6, Timestamp.valueOf(user.getUpdatedAt()));
+            ps.setString(7, user.getProfileImageId());
             return ps;
         }, keyHolder);
         
@@ -133,12 +134,19 @@ public class UserJDBCDataAccessService implements UserDao {
                     Timestamp.valueOf(LocalDateTime.now()),
                     update.getId());
         }
+        if (update.getUserType() != null) {
+            String sql = "UPDATE users SET user_type = ?, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                    update.getUserType().name(),
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    update.getId());
+        }
     }
 
     @Override
     public Optional<User> selectUserByEmail(String email) {
         var sql = """
-                SELECT id, name, email, password, created_at, updated_at, profile_image_id
+                SELECT id, name, email, password, user_type, created_at, updated_at, profile_image_id
                 FROM users
                 WHERE email = ?
                 """;

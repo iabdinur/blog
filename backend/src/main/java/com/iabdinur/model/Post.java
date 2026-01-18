@@ -38,6 +38,9 @@ public class Post {
     @Column(name = "published_at", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE")
     private LocalDateTime publishedAt;
 
+    @Column(name = "scheduled_at", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE")
+    private LocalDateTime scheduledAt;
+
     @Column(name = "is_published", nullable = false)
     private Boolean isPublished;
 
@@ -227,6 +230,14 @@ public class Post {
         this.updatedAt = updatedAt;
     }
 
+    public LocalDateTime getScheduledAt() {
+        return scheduledAt;
+    }
+
+    public void setScheduledAt(LocalDateTime scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
     @Override
     public String toString() {
         return "Post{" +
@@ -238,6 +249,7 @@ public class Post {
                 ", coverImage='" + coverImage + '\'' +
                 ", author=" + (author != null ? author.getId() : null) +
                 ", publishedAt=" + publishedAt +
+                ", scheduledAt=" + scheduledAt +
                 ", isPublished=" + isPublished +
                 ", views=" + views +
                 ", likes=" + likes +

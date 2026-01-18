@@ -2,6 +2,7 @@ package com.iabdinur.service;
 
 import com.iabdinur.dto.AuthenticationRequest;
 import com.iabdinur.dto.AuthenticationResponse;
+import com.iabdinur.dto.AuthorDTO;
 import com.iabdinur.dto.UserDTO;
 import com.iabdinur.mapper.UserDTOMapper;
 import com.iabdinur.model.User;
@@ -14,7 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class AuthenticationService {
@@ -22,13 +24,16 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final UserDTOMapper userDTOMapper;
     private final JWTUtil jwtUtil;
+    private final AuthorService authorService;
 
     public AuthenticationService(AuthenticationManager authenticationManager,
                                  UserDTOMapper userDTOMapper,
-                                 JWTUtil jwtUtil) {
+                                 JWTUtil jwtUtil,
+                                 AuthorService authorService) {
         this.authenticationManager = authenticationManager;
         this.userDTOMapper = userDTOMapper;
         this.jwtUtil = jwtUtil;
+        this.authorService = authorService;
     }
 
     public AuthenticationResponse login(AuthenticationRequest request) {
@@ -41,8 +46,22 @@ public class AuthenticationService {
             );
             User principal = (User) authentication.getPrincipal();
             UserDTO userDTO = userDTOMapper.apply(principal);
-            String token = jwtUtil.issueToken(userDTO.email(), Collections.emptyList());
-            return new AuthenticationResponse(token, userDTO);
+            
+            // Check if user has an Author profile
+            var authorOpt = authorService.getAuthorByEmail(userDTO.email());
+            
+            // Build roles list
+            List<String> roles = new ArrayList<>();
+            roles.add("ROLE_USER");
+            if (authorOpt.isPresent()) {
+                roles.add("ROLE_AUTHOR");
+            }
+            
+            // Generate JWT token with roles
+            String token = jwtUtil.issueToken(userDTO.email(), roles);
+            
+            // Return response with optional author
+            return new AuthenticationResponse(token, userDTO, authorOpt.orElse(null));
         } catch (BadCredentialsException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }

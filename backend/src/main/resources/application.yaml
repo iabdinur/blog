@@ -12,3 +12,18 @@ spring:
     validate-on-migrate: true
 server:
   port: 8080
+
+# AWS Configuration
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:us-east-1}
+  s3:
+    buckets:
+      users: ${S3_BUCKET:users}
+
+# Email Configuration
+app:
+  email:
+    enabled: ${EMAIL_ENABLED:false}
+    from: ${EMAIL_FROM:noreply@iabdinur.com}

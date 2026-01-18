@@ -2,6 +2,7 @@ package com.iabdinur.repository;
 
 import com.iabdinur.AbstractTestcontainers;
 import com.iabdinur.model.User;
+import com.iabdinur.model.UserType;
 import com.iabdinur.rowmapper.UserRowMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class UserJDBCDataAccessServiceTest extends AbstractTestcontainers {
         LocalDateTime updatedAt = FAKER.date().past(30, TimeUnit.DAYS)
                 .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
 
-        User user = new User(name, email, password);
+        User user = new User(name, email, password, UserType.REA);
         user.setCreatedAt(createdAt);
         user.setUpdatedAt(updatedAt);
         underTest.insertUser(user);
@@ -109,7 +110,7 @@ class UserJDBCDataAccessServiceTest extends AbstractTestcontainers {
         String name = FAKER.name().fullName();
         String email = FAKER.internet().emailAddress();
         String password = FAKER.internet().password();
-        User user = new User(name, email, password);
+        User user = new User(name, email, password, UserType.REA);
 
         // When
         underTest.insertUser(user);

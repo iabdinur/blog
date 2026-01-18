@@ -10,6 +10,7 @@ import com.iabdinur.dto.UserDTO;
 import com.iabdinur.dto.VerifyCodeRequest;
 import com.iabdinur.model.User;
 import com.iabdinur.model.VerificationCode;
+import com.iabdinur.util.JWTUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +37,18 @@ class UserServiceTest {
 
     @Mock
     private VerificationCodeDao verificationCodeDao;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private S3Service s3Service;
+
+    @Mock
+    private AuthorService authorService;
+
+    @Mock
+    private JWTUtil jwtUtil;
 
     private final Faker FAKER = new Faker();
 
@@ -55,7 +69,20 @@ class UserServiceTest {
             // For testing, check if encoded password/code starts with "hashed:" and matches raw
             return encoded.equals("hashed:" + raw);
         });
-        underTest = new UserService(userDao, verificationCodeDao, passwordEncoder);
+        // Mock email service to do nothing (no-op)
+        doNothing().when(emailService).sendVerificationCode(anyString(), anyString(), anyInt());
+        // Mock S3 service
+        when(s3Service.generateKey(anyString(), anyString())).thenReturn("profile-images/test-key.jpg");
+        doNothing().when(s3Service).putObject(anyString(), any(byte[].class), anyString());
+        when(s3Service.getObject(anyString())).thenReturn(new byte[]{1, 2, 3});
+        // Mock AuthorService - return empty by default (no author)
+        when(authorService.getAuthorByEmail(anyString())).thenReturn(Optional.empty());
+        // Mock JWTUtil
+        when(jwtUtil.issueToken(anyString(), anyList())).thenAnswer(invocation -> {
+            String email = invocation.getArgument(0);
+            return "jwt-token-for-" + email;
+        });
+        underTest = new UserService(userDao, verificationCodeDao, passwordEncoder, emailService, authorService, jwtUtil, s3Service);
     }
 
     @AfterEach
@@ -97,9 +124,13 @@ class UserServiceTest {
         // Then
         verify(userDao).selectUserByEmail(user.getEmail());
         verify(passwordEncoder).matches(plainPassword, user.getPassword());
+        verify(authorService).getAuthorByEmail(user.getEmail());
+        verify(jwtUtil).issueToken(eq(user.getEmail()), anyList());
         assertThat(result).isPresent();
         assertThat(result.get().token()).isNotNull();
+        assertThat(result.get().token()).startsWith("jwt-token-for-");
         assertEquals(user.getEmail(), result.get().user().email());
+        assertThat(result.get().author()).isNull(); // No author by default
     }
 
     @Test
@@ -211,6 +242,14 @@ class UserServiceTest {
         verify(verificationCodeDao).invalidateCode(user.getEmail());
         verify(verificationCodeDao).insertVerificationCode(any(VerificationCode.class));
         verify(verificationCodeDao).deleteExpiredCodes();
+        // Verify email service was called
+        ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> expiresCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(emailService).sendVerificationCode(emailCaptor.capture(), codeCaptor.capture(), expiresCaptor.capture());
+        assertThat(emailCaptor.getValue()).isEqualTo(user.getEmail());
+        assertThat(codeCaptor.getValue()).matches("\\d{6}"); // 6-digit code
+        assertThat(expiresCaptor.getValue()).isEqualTo(10); // 10 minutes
     }
 
     @Test

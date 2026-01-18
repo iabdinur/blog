@@ -39,11 +39,52 @@ public class AuthorService {
             .map(AuthorDTO::fromEntity);
     }
 
+    public Optional<AuthorDTO> getAuthorByEmail(String email) {
+        var sql = """
+                SELECT id, name, username, email, bio, avatar, cover_image, location, website,
+                       github, linkedin, followers_count, posts_count,
+                       joined_at, created_at, updated_at
+                FROM authors
+                WHERE email = ?
+                """;
+        List<Author> authors = jdbcTemplate.query(sql,
+            (rs, rowNum) -> {
+                java.sql.Timestamp joinedAtTimestamp = rs.getTimestamp("joined_at");
+                java.sql.Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
+                java.sql.Timestamp updatedAtTimestamp = rs.getTimestamp("updated_at");
+                
+                Author author = new Author(
+                    rs.getLong("id"),
+                    rs.getString("name"),
+                    rs.getString("username"),
+                    rs.getString("email"),
+                    joinedAtTimestamp != null ? joinedAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now(),
+                    createdAtTimestamp != null ? createdAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now(),
+                    updatedAtTimestamp != null ? updatedAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now()
+                );
+                author.setBio(rs.getString("bio"));
+                author.setAvatar(rs.getString("avatar"));
+                author.setCoverImage(rs.getString("cover_image"));
+                author.setLocation(rs.getString("location"));
+                author.setWebsite(rs.getString("website"));
+                author.setGithub(rs.getString("github"));
+                author.setLinkedin(rs.getString("linkedin"));
+                author.setFollowersCount(rs.getInt("followers_count"));
+                author.setPostsCount(rs.getInt("posts_count"));
+                return author;
+            },
+            email);
+        
+        return authors.stream()
+            .findFirst()
+            .map(AuthorDTO::fromEntity);
+    }
+
     public List<AuthorDTO> searchAuthors(String query) {
         // Manual search implementation
         var sql = """
                 SELECT id, name, username, email, bio, avatar, cover_image, location, website,
-                       twitter, github, linkedin, followers_count, following_count, posts_count,
+                       github, linkedin, followers_count, posts_count,
                        joined_at, created_at, updated_at
                 FROM authors
                 WHERE LOWER(name) LIKE LOWER(CONCAT('%', ?, '%'))
@@ -53,25 +94,27 @@ public class AuthorService {
                 """;
         List<Author> authors = jdbcTemplate.query(sql, 
             (rs, rowNum) -> {
+                java.sql.Timestamp joinedAtTimestamp = rs.getTimestamp("joined_at");
+                java.sql.Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
+                java.sql.Timestamp updatedAtTimestamp = rs.getTimestamp("updated_at");
+                
                 Author author = new Author(
                     rs.getLong("id"),
                     rs.getString("name"),
                     rs.getString("username"),
                     rs.getString("email"),
-                    rs.getTimestamp("joined_at").toLocalDateTime(),
-                    rs.getTimestamp("created_at").toLocalDateTime(),
-                    rs.getTimestamp("updated_at").toLocalDateTime()
+                    joinedAtTimestamp != null ? joinedAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now(),
+                    createdAtTimestamp != null ? createdAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now(),
+                    updatedAtTimestamp != null ? updatedAtTimestamp.toLocalDateTime() : java.time.LocalDateTime.now()
                 );
                 author.setBio(rs.getString("bio"));
                 author.setAvatar(rs.getString("avatar"));
                 author.setCoverImage(rs.getString("cover_image"));
                 author.setLocation(rs.getString("location"));
                 author.setWebsite(rs.getString("website"));
-                author.setTwitter(rs.getString("twitter"));
                 author.setGithub(rs.getString("github"));
                 author.setLinkedin(rs.getString("linkedin"));
                 author.setFollowersCount(rs.getInt("followers_count"));
-                author.setFollowingCount(rs.getInt("following_count"));
                 author.setPostsCount(rs.getInt("posts_count"));
                 return author;
             },
@@ -99,11 +142,9 @@ public class AuthorService {
         author.setCoverImage(request.coverImage());
         author.setLocation(request.location());
         author.setWebsite(request.website());
-        author.setTwitter(request.twitter());
         author.setGithub(request.github());
         author.setLinkedin(request.linkedin());
         author.setFollowersCount(0);
-        author.setFollowingCount(0);
         author.setPostsCount(0);
         author.setJoinedAt(LocalDateTime.now());
         author.setCreatedAt(LocalDateTime.now());
@@ -129,7 +170,6 @@ public class AuthorService {
         author.setCoverImage(request.coverImage());
         author.setLocation(request.location());
         author.setWebsite(request.website());
-        author.setTwitter(request.twitter());
         author.setGithub(request.github());
         author.setLinkedin(request.linkedin());
         author.setUpdatedAt(LocalDateTime.now());
@@ -147,5 +187,6 @@ public class AuthorService {
         authorDao.deleteAuthorById(authorOpt.get().getId());
         return true;
     }
+
 }
 

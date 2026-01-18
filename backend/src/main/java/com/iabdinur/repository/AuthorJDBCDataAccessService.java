@@ -31,7 +31,7 @@ public class AuthorJDBCDataAccessService implements AuthorDao {
     public List<Author> selectAllAuthors() {
         var sql = """
                 SELECT id, name, username, email, bio, avatar, cover_image, location, website,
-                       twitter, github, linkedin, followers_count, following_count, posts_count,
+                       github, linkedin, followers_count, posts_count,
                        joined_at, created_at, updated_at
                 FROM authors
                 ORDER BY name
@@ -43,7 +43,7 @@ public class AuthorJDBCDataAccessService implements AuthorDao {
     public Optional<Author> selectAuthorById(Long authorId) {
         var sql = """
                 SELECT id, name, username, email, bio, avatar, cover_image, location, website,
-                       twitter, github, linkedin, followers_count, following_count, posts_count,
+                       github, linkedin, followers_count, posts_count,
                        joined_at, created_at, updated_at
                 FROM authors
                 WHERE id = ?
@@ -57,7 +57,7 @@ public class AuthorJDBCDataAccessService implements AuthorDao {
     public Optional<Author> selectAuthorByUsername(String username) {
         var sql = """
                 SELECT id, name, username, email, bio, avatar, cover_image, location, website,
-                       twitter, github, linkedin, followers_count, following_count, posts_count,
+                       github, linkedin, followers_count, posts_count,
                        joined_at, created_at, updated_at
                 FROM authors
                 WHERE username = ?
@@ -71,9 +71,9 @@ public class AuthorJDBCDataAccessService implements AuthorDao {
     public void insertAuthor(Author author) {
         var sql = """
                 INSERT INTO authors(name, username, email, bio, avatar, cover_image, location, website,
-                                   twitter, github, linkedin, followers_count, following_count, posts_count,
+                                   github, linkedin, followers_count, posts_count,
                                    joined_at, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -86,15 +86,13 @@ public class AuthorJDBCDataAccessService implements AuthorDao {
             ps.setString(6, author.getCoverImage());
             ps.setString(7, author.getLocation());
             ps.setString(8, author.getWebsite());
-            ps.setString(9, author.getTwitter());
-            ps.setString(10, author.getGithub());
-            ps.setString(11, author.getLinkedin());
-            ps.setInt(12, author.getFollowersCount() != null ? author.getFollowersCount() : 0);
-            ps.setInt(13, author.getFollowingCount() != null ? author.getFollowingCount() : 0);
-            ps.setInt(14, author.getPostsCount() != null ? author.getPostsCount() : 0);
-            ps.setTimestamp(15, Timestamp.valueOf(author.getJoinedAt()));
-            ps.setTimestamp(16, Timestamp.valueOf(author.getCreatedAt()));
-            ps.setTimestamp(17, Timestamp.valueOf(author.getUpdatedAt()));
+            ps.setString(9, author.getGithub());
+            ps.setString(10, author.getLinkedin());
+            ps.setInt(11, author.getFollowersCount() != null ? author.getFollowersCount() : 0);
+            ps.setInt(12, author.getPostsCount() != null ? author.getPostsCount() : 0);
+            ps.setTimestamp(13, Timestamp.valueOf(author.getJoinedAt()));
+            ps.setTimestamp(14, Timestamp.valueOf(author.getCreatedAt()));
+            ps.setTimestamp(15, Timestamp.valueOf(author.getUpdatedAt()));
             return ps;
         }, keyHolder);
         

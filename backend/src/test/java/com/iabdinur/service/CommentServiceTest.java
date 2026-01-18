@@ -254,36 +254,42 @@ class CommentServiceTest {
         // Given
         Long commentId = FAKER.random().nextLong();
         Long postId = FAKER.random().nextLong();
+        Long authorId = FAKER.random().nextLong();
         Comment comment = new Comment();
         comment.setId(commentId);
         Post post = new Post();
         post.setId(postId);
         comment.setPost(post);
+        Author author = new Author();
+        author.setId(authorId);
+        comment.setAuthor(author);
         
         when(commentDao.selectCommentById(commentId)).thenReturn(Optional.of(comment));
         when(jdbcTemplate.update(anyString(), anyLong())).thenReturn(1);
 
         // When
-        underTest.deleteComment(commentId);
+        boolean result = underTest.deleteComment(commentId, authorId);
 
         // Then
         verify(commentDao).selectCommentById(commentId);
         verify(commentDao).deleteCommentById(commentId);
         verify(jdbcTemplate).update(anyString(), eq(postId));
+        assertThat(result).isTrue();
     }
 
     @Test
-    void itShouldThrowWhenDeletingNonExistentComment() {
+    void itShouldReturnFalseWhenDeletingNonExistentComment() {
         // Given
         Long commentId = FAKER.random().nextLong();
+        Long authorId = FAKER.random().nextLong();
         when(commentDao.selectCommentById(commentId)).thenReturn(Optional.empty());
 
         // When
-        assertThatThrownBy(() -> underTest.deleteComment(commentId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Comment not found");
+        boolean result = underTest.deleteComment(commentId, authorId);
 
         // Then
+        verify(commentDao).selectCommentById(commentId);
         verify(commentDao, never()).deleteCommentById(anyLong());
+        assertThat(result).isFalse();
     }
 }

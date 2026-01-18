@@ -12,25 +12,27 @@ import java.time.LocalDateTime;
 public class AuthorRowMapper implements RowMapper<Author> {
     @Override
     public Author mapRow(ResultSet rs, int rowNum) throws SQLException {
+        java.sql.Timestamp joinedAtTimestamp = rs.getTimestamp("joined_at");
+        java.sql.Timestamp createdAtTimestamp = rs.getTimestamp("created_at");
+        java.sql.Timestamp updatedAtTimestamp = rs.getTimestamp("updated_at");
+        
         Author author = new Author(
                 rs.getLong("id"),
                 rs.getString("name"),
                 rs.getString("username"),
                 rs.getString("email"),
-                rs.getTimestamp("joined_at").toLocalDateTime(),
-                rs.getTimestamp("created_at").toLocalDateTime(),
-                rs.getTimestamp("updated_at").toLocalDateTime()
+                joinedAtTimestamp != null ? joinedAtTimestamp.toLocalDateTime() : LocalDateTime.now(),
+                createdAtTimestamp != null ? createdAtTimestamp.toLocalDateTime() : LocalDateTime.now(),
+                updatedAtTimestamp != null ? updatedAtTimestamp.toLocalDateTime() : LocalDateTime.now()
         );
         author.setBio(rs.getString("bio"));
         author.setAvatar(rs.getString("avatar"));
         author.setCoverImage(rs.getString("cover_image"));
         author.setLocation(rs.getString("location"));
         author.setWebsite(rs.getString("website"));
-        author.setTwitter(rs.getString("twitter"));
         author.setGithub(rs.getString("github"));
         author.setLinkedin(rs.getString("linkedin"));
         author.setFollowersCount(rs.getInt("followers_count"));
-        author.setFollowingCount(rs.getInt("following_count"));
         author.setPostsCount(rs.getInt("posts_count"));
         return author;
     }

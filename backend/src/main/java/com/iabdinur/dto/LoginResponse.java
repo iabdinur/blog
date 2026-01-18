@@ -2,6 +2,7 @@ package com.iabdinur.dto;
 
 public record LoginResponse(
     String token,
-    UserDTO user
+    UserDTO user,
+    AuthorDTO author
 ) {}
 

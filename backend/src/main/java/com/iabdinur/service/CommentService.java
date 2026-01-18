@@ -8,9 +8,11 @@ import com.iabdinur.dto.CommentDTO;
 import com.iabdinur.model.Author;
 import com.iabdinur.model.Comment;
 import com.iabdinur.model.Post;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,13 +116,42 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId) {
+    public Optional<CommentDTO> updateComment(Long commentId, String content, Long authorId) {
         Optional<Comment> commentOpt = commentDao.selectCommentById(commentId);
         if (commentOpt.isEmpty()) {
-            throw new IllegalArgumentException("Comment not found with id: " + commentId);
+            return Optional.empty();
         }
 
         Comment comment = commentOpt.get();
+        
+        // Verify the author owns this comment
+        if (comment.getAuthor() == null || !comment.getAuthor().getId().equals(authorId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own comments");
+        }
+
+        comment.setContent(content);
+        comment.setUpdatedAt(java.time.LocalDateTime.now());
+        commentDao.updateComment(comment);
+
+        // Load relationships for DTO
+        loadCommentRelationships(List.of(comment));
+        return Optional.of(convertToDTO(comment, false));
+    }
+
+    @Transactional
+    public boolean deleteComment(Long commentId, Long authorId) {
+        Optional<Comment> commentOpt = commentDao.selectCommentById(commentId);
+        if (commentOpt.isEmpty()) {
+            return false;
+        }
+
+        Comment comment = commentOpt.get();
+        
+        // Verify the author owns this comment
+        if (comment.getAuthor() == null || !comment.getAuthor().getId().equals(authorId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own comments");
+        }
+
         Long postId = comment.getPost() != null ? comment.getPost().getId() : null;
         
         // Get post_id from database if not loaded
@@ -138,30 +169,44 @@ public class CommentService {
                 "UPDATE posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = ?",
                 postId);
         }
+        
+        return true;
     }
 
     private void loadCommentRelationships(List<Comment> comments) {
         for (Comment comment : comments) {
             // Load post
             if (comment.getId() != null) {
-                var postSql = "SELECT post_id FROM comments WHERE id = ?";
-                Long postId = jdbcTemplate.queryForObject(postSql, Long.class, comment.getId());
-                if (postId != null) {
-                    postDao.selectPostById(postId).ifPresent(comment::setPost);
+                try {
+                    var postSql = "SELECT post_id FROM comments WHERE id = ?";
+                    Long postId = jdbcTemplate.queryForObject(postSql, Long.class, comment.getId());
+                    if (postId != null) {
+                        postDao.selectPostById(postId).ifPresent(comment::setPost);
+                    }
+                } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+                    // Post ID not found or null - skip
                 }
                 
                 // Load author
-                var authorSql = "SELECT author_id FROM comments WHERE id = ?";
-                Long authorId = jdbcTemplate.queryForObject(authorSql, Long.class, comment.getId());
-                if (authorId != null) {
-                    authorDao.selectAuthorById(authorId).ifPresent(comment::setAuthor);
+                try {
+                    var authorSql = "SELECT author_id FROM comments WHERE id = ?";
+                    Long authorId = jdbcTemplate.queryForObject(authorSql, Long.class, comment.getId());
+                    if (authorId != null) {
+                        authorDao.selectAuthorById(authorId).ifPresent(comment::setAuthor);
+                    }
+                } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+                    // Author ID not found or null - skip
                 }
                 
                 // Load parent if exists
-                var parentSql = "SELECT parent_id FROM comments WHERE id = ?";
-                Long parentId = jdbcTemplate.queryForObject(parentSql, Long.class, comment.getId());
-                if (parentId != null) {
-                    commentDao.selectCommentById(parentId).ifPresent(comment::setParent);
+                try {
+                    var parentSql = "SELECT parent_id FROM comments WHERE id = ?";
+                    Long parentId = jdbcTemplate.queryForObject(parentSql, Long.class, comment.getId());
+                    if (parentId != null) {
+                        commentDao.selectCommentById(parentId).ifPresent(comment::setParent);
+                    }
+                } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+                    // Parent ID not found or null - skip
                 }
             }
         }

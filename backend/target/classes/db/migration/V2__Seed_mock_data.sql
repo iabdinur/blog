@@ -1,19 +1,20 @@
 -- Seed mock data for development
 
--- Insert Admin User
+-- Insert Admin User (Author type)
 -- Password: password (BCrypt hash)
-INSERT INTO users (name, email, password, created_at, updated_at)
+INSERT INTO users (name, email, password, user_type, created_at, updated_at)
 VALUES (
     'Ibrahim Abdinur',
     'iabdinur@icloud.com',
     '$2a$10$JWw/S/0M1sZ4TbXioV/lv.JA6lO.aaaBP0qFl3asEseEgMITP0DK6',
+    'AUT',
     '2024-01-01 00:00:00',
     '2024-01-01 00:00:00'
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert Author
-INSERT INTO authors (name, username, email, bio, avatar, website, twitter, github, linkedin, followers_count, following_count, posts_count, joined_at, created_at, updated_at)
+INSERT INTO authors (name, username, email, bio, avatar, website, github, linkedin, followers_count, posts_count, joined_at, created_at, updated_at)
 VALUES (
     'Ibrahim Abdinur',
     'iabdinur',
@@ -22,11 +23,9 @@ VALUES (
     'https://api.dicebear.com/7.x/avataaars/svg?seed=ibrahim',
     'https://iabdinur.com',
     'iabdinur',
-    'iabdinur',
     'https://www.linkedin.com/in/ibrahim-abdinur/',
     0,
-    0,
-    5,
+    11,
     '2024-01-01 00:00:00',
     '2024-01-01 00:00:00',
     '2024-01-01 00:00:00'
@@ -511,12 +510,320 @@ These tools form a solid foundation for modern development. Experiment and find 
     '2025-12-28 11:00:00'
 );
 
+-- Draft Post: Database Design Best Practices (NOT PUBLISHED)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'Database Design Best Practices for Modern Applications',
+    'database-design-best-practices',
+    '# Database Design Best Practices for Modern Applications
+
+Designing a database is one of the most critical decisions in application development. A well-designed database can scale efficiently, while a poorly designed one can become a bottleneck.
+
+## Normalization vs. Denormalization
+
+Understanding when to normalize and when to denormalize is key:
+
+- **Normalize** for data integrity and consistency
+- **Denormalize** for read performance when needed
+
+## Indexing Strategies
+
+Proper indexing can dramatically improve query performance:
+
+```sql
+-- Create indexes on frequently queried columns
+CREATE INDEX idx_user_email ON users(email);
+CREATE INDEX idx_post_author_id ON posts(author_id);
+CREATE INDEX idx_comment_post_id ON comments(post_id);
+```
+
+## Connection Pooling
+
+Always use connection pooling to manage database connections efficiently.
+
+## Conclusion
+
+This is a work in progress. More content coming soon!',
+    'Learn the essential principles of database design that will help you build scalable and maintainable applications.',
+    'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    NULL,
+    false,
+    0,
+    0,
+    0,
+    5,
+    '2026-01-10 10:00:00',
+    '2026-01-10 10:00:00'
+);
+
+-- Post 7: Mastering Git Workflows
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'Mastering Git Workflows: Best Practices for Team Collaboration',
+    'mastering-git-workflows',
+    '# Mastering Git Workflows: Best Practices for Team Collaboration
+
+Git is the foundation of modern software development. Understanding effective workflows can make the difference between smooth collaboration and constant merge conflicts.
+
+## Branching Strategies
+
+### Git Flow
+A robust branching model that separates development, release, and hotfix branches.
+
+### GitHub Flow
+Simpler workflow with main branch and feature branches.
+
+### Trunk-Based Development
+Continuous integration with short-lived branches.
+
+## Commit Best Practices
+
+- Write clear, descriptive commit messages
+- Keep commits focused and atomic
+- Use conventional commit format when possible
+
+## Code Review Process
+
+Effective code reviews improve code quality and team knowledge sharing.
+
+## Conclusion
+
+Adopting the right Git workflow for your team can significantly improve productivity and code quality.',
+    'Learn essential Git workflows and best practices that will improve your team collaboration and code quality.',
+    'https://images.unsplash.com/photo-1556075798-4825dfaaf5fb?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    '2026-01-05 14:00:00',
+    true,
+    1245,
+    23,
+    7,
+    8,
+    '2026-01-05 14:00:00',
+    '2026-01-05 14:00:00'
+);
+
+-- Post 8: RESTful API Design Principles
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'RESTful API Design Principles: Building Scalable Web Services',
+    'restful-api-design-principles',
+    '# RESTful API Design Principles: Building Scalable Web Services
+
+Designing a well-structured REST API is crucial for building maintainable and scalable web services.
+
+## REST Principles
+
+### Resource-Based URLs
+Use nouns, not verbs. Resources should be clearly identifiable.
+
+### HTTP Methods
+- GET: Retrieve resources
+- POST: Create new resources
+- PUT: Update entire resources
+- PATCH: Partial updates
+- DELETE: Remove resources
+
+### Status Codes
+Use appropriate HTTP status codes to communicate results clearly.
+
+## Versioning Strategies
+
+- URL versioning: `/api/v1/users`
+- Header versioning: `Accept: application/vnd.api+json;version=1`
+
+## Error Handling
+
+Consistent error responses help API consumers handle failures gracefully.
+
+## Documentation
+
+Comprehensive API documentation is essential for adoption and maintenance.
+
+## Conclusion
+
+Following REST principles creates APIs that are intuitive, maintainable, and scalable.',
+    'Learn the fundamental principles of RESTful API design to build scalable and maintainable web services.',
+    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    '2026-01-08 10:00:00',
+    true,
+    2156,
+    34,
+    12,
+    7,
+    '2026-01-08 10:00:00',
+    '2026-01-08 10:00:00'
+);
+
+-- Post 9: Docker Containerization Guide
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'Docker Containerization: A Complete Guide for Developers',
+    'docker-containerization-guide',
+    '# Docker Containerization: A Complete Guide for Developers
+
+Docker has revolutionized how we build, ship, and run applications. Understanding containerization is essential for modern development.
+
+## What is Docker?
+
+Docker packages applications and their dependencies into containers, ensuring consistency across environments.
+
+## Dockerfile Best Practices
+
+- Use multi-stage builds to reduce image size
+- Leverage layer caching effectively
+- Keep images minimal and secure
+
+## Docker Compose
+
+Orchestrate multi-container applications with Docker Compose for local development.
+
+## Container Orchestration
+
+For production, consider Kubernetes or Docker Swarm for managing containerized applications.
+
+## Best Practices
+
+- Keep containers stateless when possible
+- Use environment variables for configuration
+- Implement health checks
+- Follow security best practices
+
+## Conclusion
+
+Docker simplifies deployment and ensures consistency from development to production.',
+    'Master Docker containerization to streamline your development workflow and deployment process.',
+    'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    '2026-01-12 09:00:00',
+    true,
+    1890,
+    28,
+    9,
+    9,
+    '2026-01-12 09:00:00',
+    '2026-01-12 09:00:00'
+);
+
+-- Post 10: Testing Strategies for Modern Applications
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'Testing Strategies for Modern Applications: Unit, Integration, and E2E',
+    'testing-strategies-modern-applications',
+    '# Testing Strategies for Modern Applications: Unit, Integration, and E2E
+
+A comprehensive testing strategy is crucial for maintaining code quality and confidence in deployments.
+
+## Testing Pyramid
+
+### Unit Tests
+Fast, isolated tests that verify individual components work correctly.
+
+### Integration Tests
+Verify that different parts of your application work together.
+
+### End-to-End Tests
+Test complete user workflows from start to finish.
+
+## Test-Driven Development
+
+TDD encourages writing tests before implementation, leading to better design.
+
+## Testing Tools
+
+- Jest for JavaScript/TypeScript
+- Cypress for E2E testing
+- React Testing Library for component testing
+
+## Mocking and Stubbing
+
+Learn when and how to mock dependencies effectively.
+
+## Continuous Integration
+
+Automate testing in your CI/CD pipeline to catch issues early.
+
+## Conclusion
+
+A well-planned testing strategy saves time and reduces bugs in production.',
+    'Discover effective testing strategies to ensure your applications are reliable and maintainable.',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    '2026-01-15 11:00:00',
+    true,
+    1678,
+    19,
+    6,
+    10,
+    '2026-01-15 11:00:00',
+    '2026-01-15 11:00:00'
+);
+
+-- Post 11: Performance Optimization Techniques
+INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+VALUES (
+    'Web Performance Optimization: Techniques for Faster Applications',
+    'web-performance-optimization',
+    '# Web Performance Optimization: Techniques for Faster Applications
+
+Performance is a critical factor in user experience. Fast applications keep users engaged and improve conversion rates.
+
+## Frontend Optimization
+
+### Code Splitting
+Break your bundle into smaller chunks loaded on demand.
+
+### Lazy Loading
+Load images and components only when needed.
+
+### Caching Strategies
+Implement effective browser and CDN caching.
+
+## Backend Optimization
+
+### Database Query Optimization
+- Use indexes effectively
+- Avoid N+1 queries
+- Implement pagination
+
+### API Response Optimization
+- Compress responses
+- Use GraphQL for flexible queries
+- Implement response caching
+
+## Monitoring and Metrics
+
+Track Core Web Vitals and other performance metrics to identify bottlenecks.
+
+## Tools and Techniques
+
+- Lighthouse for performance auditing
+- WebPageTest for detailed analysis
+- Chrome DevTools for profiling
+
+## Conclusion
+
+Continuous performance monitoring and optimization should be part of your development workflow.',
+    'Learn essential techniques to optimize web application performance and improve user experience.',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    (SELECT id FROM authors WHERE username = 'iabdinur'),
+    '2026-01-18 13:00:00',
+    true,
+    2034,
+    31,
+    11,
+    8,
+    '2026-01-18 13:00:00',
+    '2026-01-18 13:00:00'
+);
+
 -- Link posts to tags (post_tags junction table)
 -- Welcome post -> Interview Prep
 INSERT INTO post_tags (post_id, tag_id)
 SELECT p.id, t.id
 FROM posts p, tags t
-WHERE p.slug = 'welcome-to-our-weekly-newsletter' AND t.slug = 'interview-prep';
+WHERE p.slug = 'welcome-to-my-weekly-newsletter' AND t.slug = 'interview-prep';
 
 -- Building Modern Web Apps -> AI, DevOps, Interview Prep
 INSERT INTO post_tags (post_id, tag_id)
@@ -553,12 +860,58 @@ FROM posts p, tags t
 WHERE p.slug = 'essential-developer-tools-2026' 
   AND t.slug IN ('uiuc-mcs', 'interview-prep');
 
+-- Git Workflows -> DevOps, Software Engineering
+INSERT INTO post_tags (post_id, tag_id)
+SELECT p.id, t.id
+FROM posts p, tags t
+WHERE p.slug = 'mastering-git-workflows' 
+  AND t.slug IN ('devops', 'software-engineering');
+
+-- RESTful API -> System Design, Software Engineering
+INSERT INTO post_tags (post_id, tag_id)
+SELECT p.id, t.id
+FROM posts p, tags t
+WHERE p.slug = 'restful-api-design-principles' 
+  AND t.slug IN ('system-design', 'software-engineering');
+
+-- Docker -> DevOps, Software Engineering
+INSERT INTO post_tags (post_id, tag_id)
+SELECT p.id, t.id
+FROM posts p, tags t
+WHERE p.slug = 'docker-containerization-guide' 
+  AND t.slug IN ('devops', 'software-engineering');
+
+-- Testing -> Software Engineering, Interview Prep
+INSERT INTO post_tags (post_id, tag_id)
+SELECT p.id, t.id
+FROM posts p, tags t
+WHERE p.slug = 'testing-strategies-modern-applications' 
+  AND t.slug IN ('software-engineering', 'interview-prep');
+
+-- Performance -> Software Engineering, System Design
+INSERT INTO post_tags (post_id, tag_id)
+SELECT p.id, t.id
+FROM posts p, tags t
+WHERE p.slug = 'web-performance-optimization' 
+  AND t.slug IN ('software-engineering', 'system-design');
+
 -- Update tag post counts
 UPDATE tags SET posts_count = (
     SELECT COUNT(DISTINCT pt.post_id)
     FROM post_tags pt
     WHERE pt.tag_id = tags.id
 );
+
+-- Insert Newsletter Subscriber
+INSERT INTO newsletter_subscriptions (email, status, categories, subscribed_at, updated_at)
+VALUES (
+    'iabdinur1@gmail.com',
+    'active',
+    ARRAY['web-development', 'ai', 'devops'],
+    '2026-01-14 00:00:00',
+    '2026-01-14 00:00:00'
+)
+ON CONFLICT (email) DO NOTHING;
 
 -- Remove any numeric or hex ID suffixes from slugs (clean slugs)
 UPDATE posts 

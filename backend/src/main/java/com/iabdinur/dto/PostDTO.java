@@ -11,6 +11,7 @@ public record PostDTO(
     String excerpt,
     String coverImage,
     String publishedAt,
+    String scheduledAt,
     String updatedAt,
     AuthorDTO author,
     List<TagDTO> tags,

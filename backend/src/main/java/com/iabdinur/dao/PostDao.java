@@ -2,6 +2,7 @@ package com.iabdinur.dao;
 
 import com.iabdinur.model.Post;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,8 @@ public interface PostDao {
     long countPublishedPosts();
     long countPostsByAuthorId(Long authorId);
     long countPostsByTagSlug(String tagSlug);
+    List<Post> selectDraftsByAuthorId(Long authorId, int limit, int offset);
+    long countDraftsByAuthorId(Long authorId);
+    List<Post> selectScheduledPostsReadyToPublish();
+    void updatePostPublishedStatus(Long postId, boolean isPublished, LocalDateTime publishedAt);
 }

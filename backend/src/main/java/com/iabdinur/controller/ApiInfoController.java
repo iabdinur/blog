@@ -11,6 +11,14 @@ import java.util.*;
 @RequestMapping("/api/v1")
 public class ApiInfoController {
 
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> health = new LinkedHashMap<>();
+        health.put("status", "UP");
+        health.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(health);
+    }
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getApiInfo() {
         Map<String, Object> apiInfo = new LinkedHashMap<>();

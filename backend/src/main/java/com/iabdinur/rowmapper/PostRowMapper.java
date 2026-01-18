@@ -26,6 +26,11 @@ public class PostRowMapper implements RowMapper<Post> {
             post.setPublishedAt(publishedAt.toLocalDateTime());
         }
         
+        Timestamp scheduledAt = rs.getTimestamp("scheduled_at");
+        if (scheduledAt != null) {
+            post.setScheduledAt(scheduledAt.toLocalDateTime());
+        }
+        
         post.setIsPublished(rs.getBoolean("is_published"));
         post.setViews(rs.getLong("views"));
         post.setLikes(rs.getLong("likes"));

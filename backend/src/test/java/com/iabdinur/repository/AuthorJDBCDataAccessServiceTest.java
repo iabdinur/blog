@@ -40,11 +40,9 @@ class AuthorJDBCDataAccessServiceTest extends AbstractTestcontainers {
         String coverImage = FAKER.internet().image();
         String location = FAKER.address().city();
         String website = FAKER.internet().url();
-        String twitter = FAKER.name().username();
         String github = FAKER.name().username();
         String linkedin = FAKER.name().username();
         Integer followersCount = FAKER.random().nextInt(10000);
-        Integer followingCount = FAKER.random().nextInt(1000);
         Integer postsCount = FAKER.random().nextInt(100);
         LocalDateTime joinedAt = FAKER.date().past(365, TimeUnit.DAYS)
                 .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
@@ -59,11 +57,9 @@ class AuthorJDBCDataAccessServiceTest extends AbstractTestcontainers {
         author.setCoverImage(coverImage);
         author.setLocation(location);
         author.setWebsite(website);
-        author.setTwitter(twitter);
         author.setGithub(github);
         author.setLinkedin(linkedin);
         author.setFollowersCount(followersCount);
-        author.setFollowingCount(followingCount);
         author.setPostsCount(postsCount);
         author.setJoinedAt(joinedAt);
         author.setCreatedAt(createdAt);

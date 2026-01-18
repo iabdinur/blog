@@ -10,11 +10,9 @@ CREATE TABLE authors
     cover_image    TEXT,
     location       TEXT,
     website        TEXT,
-    twitter        TEXT,
     github         TEXT,
     linkedin       TEXT,
     followers_count INTEGER NOT NULL DEFAULT 0,
-    following_count INTEGER NOT NULL DEFAULT 0,
     posts_count    INTEGER NOT NULL DEFAULT 0,
     joined_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -48,6 +46,7 @@ CREATE TABLE posts
     cover_image     TEXT,
     author_id       BIGINT NOT NULL,
     published_at    TIMESTAMP WITHOUT TIME ZONE,
+    scheduled_at    TIMESTAMP WITHOUT TIME ZONE,
     is_published    BOOLEAN NOT NULL DEFAULT false,
     views           BIGINT NOT NULL DEFAULT 0,
     likes           BIGINT NOT NULL DEFAULT 0,
@@ -58,6 +57,9 @@ CREATE TABLE posts
     CONSTRAINT posts_slug_unique UNIQUE (slug),
     CONSTRAINT posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
 );
+
+-- Create index for efficient querying of scheduled posts
+CREATE INDEX idx_posts_scheduled_at ON posts(scheduled_at) WHERE scheduled_at IS NOT NULL AND is_published = false;
 
 -- Create post_tags junction table
 CREATE TABLE post_tags
@@ -93,6 +95,7 @@ CREATE TABLE users
     name            TEXT NOT NULL,
     email           TEXT NOT NULL,
     password        TEXT NOT NULL,
+    user_type       TEXT NOT NULL DEFAULT 'REA' CHECK (user_type IN ('REA', 'AUT')),
     profile_image_id TEXT,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -112,6 +115,35 @@ CREATE TABLE verification_codes
     is_used         BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- Create sent_emails table for email audit trail
+CREATE TABLE sent_emails
+(
+    id              BIGSERIAL PRIMARY KEY,
+    recipient_email TEXT NOT NULL,
+    subject         TEXT NOT NULL,
+    email_type      TEXT NOT NULL,
+    ses_message_id  TEXT,
+    status          TEXT NOT NULL,
+    sent_at         TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    delivered_at    TIMESTAMP WITHOUT TIME ZONE,
+    error_message   TEXT
+);
+
+-- Create newsletter_subscriptions table
+CREATE TABLE newsletter_subscriptions
+(
+    id              BIGSERIAL PRIMARY KEY,
+    email           TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed', 'pending')),
+    frequency       TEXT NOT NULL DEFAULT 'weekly' CHECK (frequency IN ('daily', 'weekly', 'monthly')),
+    categories      TEXT[], -- Array of category strings
+    subscribed_at   TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    unsubscribed_at TIMESTAMP WITHOUT TIME ZONE,
+    updated_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT newsletter_subscriptions_email_unique UNIQUE (email)
+);
+
+
 -- Create indexes for better query performance
 CREATE INDEX idx_posts_author_id ON posts(author_id);
 CREATE INDEX idx_posts_slug ON posts(slug);
@@ -128,3 +160,9 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_verification_codes_email ON verification_codes(email);
 CREATE INDEX idx_verification_codes_expires_at ON verification_codes(expires_at);
 CREATE INDEX idx_verification_codes_email_created ON verification_codes(email, created_at);
+CREATE INDEX idx_sent_emails_recipient ON sent_emails(recipient_email);
+CREATE INDEX idx_sent_emails_type ON sent_emails(email_type);
+CREATE INDEX idx_sent_emails_sent_at ON sent_emails(sent_at);
+CREATE INDEX idx_sent_emails_status ON sent_emails(status);
+CREATE INDEX idx_newsletter_subscriptions_email ON newsletter_subscriptions(email);
+CREATE INDEX idx_newsletter_subscriptions_status ON newsletter_subscriptions(status);

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  blog-api:
+    container_name: blog-api-prod
+    image: iabdinur/blog-api:latest
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/${DB_NAME:-blog}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-true}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@iabdinur.com}
+      - JWT_SECRET=${JWT_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - blog-network
+
+networks:
+  blog-network:
+    driver: bridge

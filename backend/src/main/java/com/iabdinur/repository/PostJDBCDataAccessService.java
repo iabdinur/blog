@@ -31,7 +31,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public List<Post> selectAllPosts() {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 ORDER BY created_at DESC
@@ -44,7 +44,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public List<Post> selectPublishedPosts(int limit, int offset) {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 WHERE is_published = true
@@ -58,7 +58,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public List<Post> selectPostsByAuthorId(Long authorId, int limit, int offset) {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 WHERE author_id = ? AND is_published = true
@@ -72,7 +72,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public List<Post> selectPostsByTagSlug(String tagSlug, int limit, int offset) {
         var sql = """
                 SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image,
-                       p.author_id, p.published_at, p.is_published, p.views, p.likes,
+                       p.author_id, p.published_at, p.scheduled_at, p.is_published, p.views, p.likes,
                        p.comments_count, p.reading_time,
                        p.created_at, p.updated_at
                 FROM posts p
@@ -89,7 +89,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public Optional<Post> selectPostById(Long postId) {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 WHERE id = ?
@@ -103,7 +103,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public Optional<Post> selectPostBySlug(String slug) {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 WHERE slug = ?
@@ -117,7 +117,7 @@ public class PostJDBCDataAccessService implements PostDao {
     public Optional<Post> selectPublishedPostBySlug(String slug) {
         var sql = """
                 SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
-                       is_published, views, likes, comments_count, reading_time,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
                 WHERE slug = ? AND is_published = true
@@ -131,9 +131,9 @@ public class PostJDBCDataAccessService implements PostDao {
     public void insertPost(Post post) {
         var sql = """
                 INSERT INTO posts(title, slug, content, excerpt, cover_image, author_id, published_at,
-                                 is_published, views, likes, comments_count, reading_time,
+                                 scheduled_at, is_published, views, likes, comments_count, reading_time,
                                  created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -145,13 +145,14 @@ public class PostJDBCDataAccessService implements PostDao {
             ps.setString(5, post.getCoverImage());
             ps.setLong(6, post.getAuthor().getId());
             ps.setTimestamp(7, post.getPublishedAt() != null ? Timestamp.valueOf(post.getPublishedAt()) : null);
-            ps.setBoolean(8, post.getIsPublished() != null ? post.getIsPublished() : false);
-            ps.setLong(9, post.getViews() != null ? post.getViews() : 0L);
-            ps.setLong(10, post.getLikes() != null ? post.getLikes() : 0L);
-            ps.setInt(11, post.getCommentsCount() != null ? post.getCommentsCount() : 0);
-            ps.setObject(12, post.getReadingTime());
-            ps.setTimestamp(13, Timestamp.valueOf(post.getCreatedAt()));
-            ps.setTimestamp(14, Timestamp.valueOf(post.getUpdatedAt()));
+            ps.setTimestamp(8, post.getScheduledAt() != null ? Timestamp.valueOf(post.getScheduledAt()) : null);
+            ps.setBoolean(9, post.getIsPublished() != null ? post.getIsPublished() : false);
+            ps.setLong(10, post.getViews() != null ? post.getViews() : 0L);
+            ps.setLong(11, post.getLikes() != null ? post.getLikes() : 0L);
+            ps.setInt(12, post.getCommentsCount() != null ? post.getCommentsCount() : 0);
+            ps.setObject(13, post.getReadingTime());
+            ps.setTimestamp(14, Timestamp.valueOf(post.getCreatedAt()));
+            ps.setTimestamp(15, Timestamp.valueOf(post.getUpdatedAt()));
             return ps;
         }, keyHolder);
         
@@ -232,6 +233,24 @@ public class PostJDBCDataAccessService implements PostDao {
                     Timestamp.valueOf(LocalDateTime.now()),
                     update.getId());
         }
+        // Handle scheduled_at - check if it was explicitly set (not just null from not being updated)
+        // We'll update it if the post object has scheduledAt set (even if null, to clear it)
+        // This is a bit tricky - we need to check if scheduledAt field was modified
+        // For now, we'll update it if isPublished is being set to true (to clear scheduled_at)
+        if (update.getIsPublished() != null && update.getIsPublished()) {
+            // Clear scheduled_at when manually publishing
+            String sql = "UPDATE posts SET scheduled_at = NULL, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    update.getId());
+        } else if (update.getScheduledAt() != null) {
+            // Set scheduled_at
+            String sql = "UPDATE posts SET scheduled_at = ?, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                    Timestamp.valueOf(update.getScheduledAt()),
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    update.getId());
+        }
         // Add more fields as needed
     }
 
@@ -307,5 +326,59 @@ public class PostJDBCDataAccessService implements PostDao {
                 """;
         Long count = jdbcTemplate.queryForObject(sql, Long.class, tagSlug);
         return count != null ? count : 0L;
+    }
+
+    @Override
+    public List<Post> selectDraftsByAuthorId(Long authorId, int limit, int offset) {
+        var sql = """
+                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
+                       created_at, updated_at
+                FROM posts
+                WHERE author_id = ? AND is_published = false
+                ORDER BY updated_at DESC
+                LIMIT ? OFFSET ?
+                """;
+        return jdbcTemplate.query(sql, postRowMapper, authorId, limit, offset);
+    }
+
+    @Override
+    public long countDraftsByAuthorId(Long authorId) {
+        var sql = """
+                SELECT COUNT(id)
+                FROM posts
+                WHERE author_id = ? AND is_published = false
+                """;
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, authorId);
+        return count != null ? count : 0L;
+    }
+
+    @Override
+    public List<Post> selectScheduledPostsReadyToPublish() {
+        var sql = """
+                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                       scheduled_at, is_published, views, likes, comments_count, reading_time,
+                       created_at, updated_at
+                FROM posts
+                WHERE scheduled_at IS NOT NULL
+                  AND is_published = false
+                  AND scheduled_at <= ?
+                ORDER BY scheduled_at ASC
+                """;
+        return jdbcTemplate.query(sql, postRowMapper, Timestamp.valueOf(LocalDateTime.now()));
+    }
+
+    @Override
+    public void updatePostPublishedStatus(Long postId, boolean isPublished, LocalDateTime publishedAt) {
+        var sql = """
+                UPDATE posts
+                SET is_published = ?, published_at = ?, scheduled_at = NULL, updated_at = ?
+                WHERE id = ?
+                """;
+        jdbcTemplate.update(sql,
+                isPublished,
+                publishedAt != null ? Timestamp.valueOf(publishedAt) : null,
+                Timestamp.valueOf(LocalDateTime.now()),
+                postId);
     }
 }

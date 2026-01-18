@@ -2,6 +2,7 @@ package com.iabdinur.rowmapper;
 
 import com.github.javafaker.Faker;
 import com.iabdinur.model.User;
+import com.iabdinur.model.UserType;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
@@ -29,7 +30,7 @@ class UserRowMapperTest {
                 .atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
         String profileImageId = FAKER.internet().uuid();
 
-        return new User(userId, name, email, password, createdAt, updatedAt, profileImageId);
+        return new User(userId, name, email, password, UserType.REA, createdAt, updatedAt, profileImageId);
     }
 
     @Test
@@ -51,6 +52,7 @@ class UserRowMapperTest {
         when(resultSet.getString("name")).thenReturn(expectedName);
         when(resultSet.getString("email")).thenReturn(expectedEmail);
         when(resultSet.getString("password")).thenReturn(expectedPassword);
+        when(resultSet.getString("user_type")).thenReturn("REA");
         when(resultSet.getTimestamp("created_at")).thenReturn(Timestamp.valueOf(expectedCreatedAt));
         when(resultSet.getTimestamp("updated_at")).thenReturn(Timestamp.valueOf(expectedUpdatedAt));
         when(resultSet.getString("profile_image_id")).thenReturn(expectedProfileImageId);
@@ -59,7 +61,7 @@ class UserRowMapperTest {
         User actual = userRowMapper.mapRow(resultSet, 1);
 
         // Then
-        User expected = new User(expectedId, expectedName, expectedEmail, expectedPassword, expectedCreatedAt, expectedUpdatedAt, expectedProfileImageId);
+        User expected = new User(expectedId, expectedName, expectedEmail, expectedPassword, UserType.REA, expectedCreatedAt, expectedUpdatedAt, expectedProfileImageId);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -82,6 +84,7 @@ class UserRowMapperTest {
         when(resultSet.getString("name")).thenReturn(name);
         when(resultSet.getString("email")).thenReturn(email);
         when(resultSet.getString("password")).thenReturn(password);
+        when(resultSet.getString("user_type")).thenReturn("REA");
         when(resultSet.getTimestamp("created_at")).thenReturn(Timestamp.valueOf(createdAt));
         when(resultSet.getTimestamp("updated_at")).thenReturn(Timestamp.valueOf(updatedAt));
         when(resultSet.getString("profile_image_id")).thenReturn(null);

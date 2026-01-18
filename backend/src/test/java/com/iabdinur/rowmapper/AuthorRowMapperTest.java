@@ -28,11 +28,9 @@ class AuthorRowMapperTest {
         String coverImage = FAKER.internet().image();
         String location = FAKER.address().city();
         String website = FAKER.internet().url();
-        String twitter = FAKER.name().username();
         String github = FAKER.name().username();
         String linkedin = FAKER.name().username();
         Integer followersCount = FAKER.random().nextInt(10000);
-        Integer followingCount = FAKER.random().nextInt(1000);
         Integer postsCount = FAKER.random().nextInt(100);
         LocalDateTime joinedAt = FAKER.date().past(365, TimeUnit.DAYS).toInstant()
                 .atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
@@ -47,11 +45,9 @@ class AuthorRowMapperTest {
         author.setCoverImage(coverImage);
         author.setLocation(location);
         author.setWebsite(website);
-        author.setTwitter(twitter);
         author.setGithub(github);
         author.setLinkedin(linkedin);
         author.setFollowersCount(followersCount);
-        author.setFollowingCount(followingCount);
         author.setPostsCount(postsCount);
         return author;
     }
@@ -69,11 +65,9 @@ class AuthorRowMapperTest {
         String expectedCoverImage = author.getCoverImage();
         String expectedLocation = author.getLocation();
         String expectedWebsite = author.getWebsite();
-        String expectedTwitter = author.getTwitter();
         String expectedGithub = author.getGithub();
         String expectedLinkedin = author.getLinkedin();
         Integer expectedFollowersCount = author.getFollowersCount();
-        Integer expectedFollowingCount = author.getFollowingCount();
         Integer expectedPostsCount = author.getPostsCount();
         LocalDateTime expectedJoinedAt = author.getJoinedAt();
         LocalDateTime expectedCreatedAt = author.getCreatedAt();
@@ -91,11 +85,9 @@ class AuthorRowMapperTest {
         when(resultSet.getString("cover_image")).thenReturn(expectedCoverImage);
         when(resultSet.getString("location")).thenReturn(expectedLocation);
         when(resultSet.getString("website")).thenReturn(expectedWebsite);
-        when(resultSet.getString("twitter")).thenReturn(expectedTwitter);
         when(resultSet.getString("github")).thenReturn(expectedGithub);
         when(resultSet.getString("linkedin")).thenReturn(expectedLinkedin);
         when(resultSet.getInt("followers_count")).thenReturn(expectedFollowersCount);
-        when(resultSet.getInt("following_count")).thenReturn(expectedFollowingCount);
         when(resultSet.getInt("posts_count")).thenReturn(expectedPostsCount);
         when(resultSet.getTimestamp("joined_at")).thenReturn(Timestamp.valueOf(expectedJoinedAt));
         when(resultSet.getTimestamp("created_at")).thenReturn(Timestamp.valueOf(expectedCreatedAt));
@@ -114,11 +106,9 @@ class AuthorRowMapperTest {
         assertThat(actual.getCoverImage()).isEqualTo(expectedCoverImage);
         assertThat(actual.getLocation()).isEqualTo(expectedLocation);
         assertThat(actual.getWebsite()).isEqualTo(expectedWebsite);
-        assertThat(actual.getTwitter()).isEqualTo(expectedTwitter);
         assertThat(actual.getGithub()).isEqualTo(expectedGithub);
         assertThat(actual.getLinkedin()).isEqualTo(expectedLinkedin);
         assertThat(actual.getFollowersCount()).isEqualTo(expectedFollowersCount);
-        assertThat(actual.getFollowingCount()).isEqualTo(expectedFollowingCount);
         assertThat(actual.getPostsCount()).isEqualTo(expectedPostsCount);
         assertThat(actual.getJoinedAt()).isEqualTo(expectedJoinedAt);
         assertThat(actual.getCreatedAt()).isEqualTo(expectedCreatedAt);

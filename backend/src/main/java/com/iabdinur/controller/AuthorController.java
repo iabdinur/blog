@@ -2,6 +2,7 @@ package com.iabdinur.controller;
 
 import com.iabdinur.dto.AuthorDTO;
 import com.iabdinur.service.AuthorService;
+import com.iabdinur.util.JWTUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,9 +10,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/authors")
 public class AuthorController {
     private final AuthorService authorService;
+    private final JWTUtil jwtUtil;
 
-    public AuthorController(AuthorService authorService) {
+    public AuthorController(AuthorService authorService, JWTUtil jwtUtil) {
         this.authorService = authorService;
+        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
@@ -30,12 +33,39 @@ public class AuthorController {
     }
 
     @PostMapping
-    public ResponseEntity<AuthorDTO> createAuthor(@RequestBody com.iabdinur.dto.CreateAuthorRequest request) {
+    public ResponseEntity<?> createAuthor(@RequestBody com.iabdinur.dto.CreateAuthorRequest request) {
+        // Validate required fields
+        if (request.name() == null || request.name().trim().isEmpty()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body("Name is required");
+        }
+        if (request.email() == null || request.email().trim().isEmpty()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body("Email is required");
+        }
+        if (request.username() == null || request.username().trim().isEmpty()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body("Username is required");
+        }
+        
         try {
             AuthorDTO createdAuthor = authorService.createAuthor(request);
             return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(createdAuthor);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Handle unique constraint violations (duplicate username or email)
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("username")) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body("Username already exists");
+            } else if (errorMessage != null && errorMessage.contains("email")) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body("Email already exists");
+            }
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body("Failed to create author: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body("Failed to create author: " + e.getMessage());
         }
     }
 
@@ -53,5 +83,6 @@ public class AuthorController {
             ? ResponseEntity.ok().build()
             : ResponseEntity.notFound().build();
     }
+
 }
 

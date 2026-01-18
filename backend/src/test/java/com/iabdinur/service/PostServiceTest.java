@@ -222,7 +222,8 @@ class PostServiceTest {
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
-                5
+                5,
+                null // scheduledAt
         );
 
         when(authorDao.selectAuthorById(author.getId())).thenReturn(Optional.of(author));
@@ -266,7 +267,8 @@ class PostServiceTest {
                 authorId.toString(),
                 new ArrayList<>(),
                 true,
-                5
+                5,
+                null // scheduledAt
         );
 
         when(authorDao.selectAuthorById(authorId)).thenReturn(Optional.empty());
@@ -295,7 +297,8 @@ class PostServiceTest {
                 "1",
                 new ArrayList<>(),
                 true,
-                10
+                10,
+                null // scheduledAt
         );
 
         when(postDao.selectPostBySlug(post.getSlug())).thenReturn(Optional.of(post));
@@ -327,7 +330,8 @@ class PostServiceTest {
                 "1",
                 new ArrayList<>(),
                 true,
-                5
+                5,
+                null // scheduledAt
         );
 
         when(postDao.selectPostBySlug(slug)).thenReturn(Optional.empty());

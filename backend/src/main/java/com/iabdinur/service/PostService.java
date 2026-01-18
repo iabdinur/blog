@@ -11,6 +11,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -94,7 +98,7 @@ public class PostService {
         
         var sql = """
                 SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image, p.author_id,
-                       p.published_at, p.is_published, p.views, p.likes, p.comments_count, p.reading_time,
+                       p.published_at, p.scheduled_at, p.is_published, p.views, p.likes, p.comments_count, p.reading_time,
                        p.created_at, p.updated_at
                 FROM posts p
                 WHERE p.is_published = true
@@ -118,6 +122,10 @@ public class PostService {
                     post.setPublishedAt(rs.getTimestamp("published_at").toLocalDateTime());
                 }
                 post.setIsPublished(rs.getBoolean("is_published"));
+                Timestamp scheduledAt = rs.getTimestamp("scheduled_at");
+                if (scheduledAt != null) {
+                    post.setScheduledAt(scheduledAt.toLocalDateTime());
+                }
                 post.setViews(rs.getLong("views"));
                 post.setLikes(rs.getLong("likes"));
                 post.setCommentsCount(rs.getInt("comments_count"));
@@ -146,6 +154,49 @@ public class PostService {
             .collect(Collectors.toList());
 
         return new PostListResponse(postDTOs, (int) total, page, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public PostListResponse getDraftsByAuthor(Long authorId, Integer page, Integer limit) {
+        int offset = (page - 1) * limit;
+        List<Post> drafts = postDao.selectDraftsByAuthorId(authorId, limit, offset);
+        long total = postDao.countDraftsByAuthorId(authorId);
+        
+        // Load relationships
+        loadPostRelationships(drafts);
+        
+        List<PostDTO> postDTOs = drafts.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+        
+        return new PostListResponse(postDTOs, (int) total, page, limit);
+    }
+
+    @Transactional
+    public Optional<PostDTO> publishDraft(String slug) {
+        Optional<Post> postOpt = postDao.selectPostBySlug(slug);
+        if (postOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Post post = postOpt.get();
+        if (post.getIsPublished()) {
+            // Already published
+            loadPostRelationships(List.of(post));
+            return Optional.of(convertToDTO(post));
+        }
+        
+        // Publish the draft
+        post.setIsPublished(true);
+        if (post.getPublishedAt() == null) {
+            post.setPublishedAt(java.time.LocalDateTime.now());
+        }
+        post.setUpdatedAt(java.time.LocalDateTime.now());
+        postDao.updatePost(post);
+        
+        // Load relationships for DTO
+        loadPostRelationships(List.of(post));
+        return Optional.of(convertToDTO(post));
     }
 
     @Transactional
@@ -200,7 +251,16 @@ public class PostService {
         post.setCreatedAt(java.time.LocalDateTime.now());
         post.setUpdatedAt(java.time.LocalDateTime.now());
         
-        if (post.getIsPublished()) {
+        // Handle scheduled posts
+        if (request.scheduledAt() != null && !request.scheduledAt().isEmpty()) {
+            try {
+                LocalDateTime scheduledDateTime = parseScheduledAt(request.scheduledAt());
+                post.setScheduledAt(scheduledDateTime);
+                post.setIsPublished(false); // Scheduled posts are not published yet
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid scheduledAt format: " + request.scheduledAt() + ". Error: " + e.getMessage());
+            }
+        } else if (post.getIsPublished()) {
             post.setPublishedAt(java.time.LocalDateTime.now());
         }
 
@@ -248,11 +308,31 @@ public class PostService {
             authorOpt.ifPresent(post::setAuthor);
         }
 
-        // Update published status
-        if (request.isPublished() != null) {
-            post.setIsPublished(request.isPublished());
-            if (request.isPublished() && !wasPublished) {
-                post.setPublishedAt(java.time.LocalDateTime.now());
+        // Handle scheduled posts
+        String scheduledAtValue = request.scheduledAt();
+        if (scheduledAtValue != null && !scheduledAtValue.trim().isEmpty()) {
+            try {
+                LocalDateTime scheduledDateTime = parseScheduledAt(scheduledAtValue);
+                if (scheduledDateTime != null) {
+                    post.setScheduledAt(scheduledDateTime);
+                    post.setIsPublished(false); // Scheduled posts are not published yet
+                    post.setPublishedAt(null); // Clear published_at for scheduled posts
+                } else {
+                    post.setScheduledAt(null);
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid scheduledAt format: " + scheduledAtValue + ". Error: " + e.getMessage());
+            }
+        } else {
+            // Clear scheduled_at if empty/null is provided
+            post.setScheduledAt(null);
+            
+            // Update published status (only if not scheduling)
+            if (request.isPublished() != null) {
+                post.setIsPublished(request.isPublished());
+                if (request.isPublished() && !wasPublished) {
+                    post.setPublishedAt(java.time.LocalDateTime.now());
+                }
             }
         }
 
@@ -306,9 +386,13 @@ public class PostService {
             // Load author
             if (post.getId() != null) {
                 var authorSql = "SELECT author_id FROM posts WHERE id = ?";
-                Long authorId = jdbcTemplate.queryForObject(authorSql, Long.class, post.getId());
-                if (authorId != null) {
-                    authorDao.selectAuthorById(authorId).ifPresent(post::setAuthor);
+                try {
+                    Long authorId = jdbcTemplate.queryForObject(authorSql, Long.class, post.getId());
+                    if (authorId != null) {
+                        authorDao.selectAuthorById(authorId).ifPresent(post::setAuthor);
+                    }
+                } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+                    // Author ID not found or null - skip
                 }
                 
                 // Load tags
@@ -356,6 +440,7 @@ public class PostService {
             post.getExcerpt(),
             post.getCoverImage(),
             post.getPublishedAt() != null ? post.getPublishedAt().toString() : null,
+            post.getScheduledAt() != null ? post.getScheduledAt().toString() : null,
             post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null,
             authorDTO,
             tagDTOs,
@@ -365,5 +450,56 @@ public class PostService {
             post.getCommentsCount(),
             post.getIsPublished()
         );
+    }
+    
+    /**
+     * Parse scheduledAt string from frontend (ISO format) to LocalDateTime.
+     * Handles various ISO formats including with/without timezone and milliseconds.
+     */
+    private LocalDateTime parseScheduledAt(String scheduledAt) {
+        if (scheduledAt == null || scheduledAt.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            String cleaned = scheduledAt.trim();
+            String original = cleaned;
+            
+            // Remove 'Z' timezone indicator
+            cleaned = cleaned.replace("Z", "");
+            
+            // Remove timezone offset if present (e.g., "+05:00" or "-05:00")
+            cleaned = cleaned.replaceAll("[+-]\\d{2}:\\d{2}$", "");
+            
+            // Remove milliseconds if present (e.g., ".000" or ".123")
+            // Match dot followed by 1-9 digits (milliseconds)
+            cleaned = cleaned.replaceAll("\\.\\d{1,9}", "");
+            
+            // Now cleaned should be in format: "2026-01-16T03:13:00" or "2026-01-16T03:13"
+            
+            // Try parsing with ISO_LOCAL_DATE_TIME format first (handles "2026-01-15T10:00:00")
+            try {
+                LocalDateTime result = LocalDateTime.parse(cleaned, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                return result;
+            } catch (DateTimeParseException e1) {
+                // If that fails, try parsing without seconds (e.g., "2026-01-15T10:00")
+                try {
+                    if (cleaned.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$")) {
+                        return LocalDateTime.parse(cleaned, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+                    }
+                } catch (DateTimeParseException e2) {
+                    // If both fail, throw with detailed error
+                    throw new IllegalArgumentException("Unable to parse scheduledAt. Original: " + original + 
+                        ", Cleaned: " + cleaned + ", First error: " + e1.getMessage());
+                }
+                throw new IllegalArgumentException("Unable to parse scheduledAt. Original: " + original + 
+                    ", Cleaned: " + cleaned + ", Error: " + e1.getMessage());
+            }
+        } catch (IllegalArgumentException e) {
+            // Re-throw IllegalArgumentException as-is
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unable to parse scheduledAt: " + scheduledAt + ". Error: " + e.getMessage(), e);
+        }
     }
 }

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
@@ -25,8 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.context.annotation.Import;
+
 @SpringBootTest(classes = com.iabdinur.BlogApp.class)
 @AutoConfigureMockMvc
+@Import(com.iabdinur.TestConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class BlogAppIT extends AbstractTestcontainers {
 
@@ -194,10 +198,9 @@ class BlogAppIT extends AbstractTestcontainers {
                 authorEmail,
                 authorBio,
                 FAKER.internet().avatar(),
-                FAKER.internet().image(),
+                FAKER.internet().avatar(),
                 FAKER.address().city(),
                 FAKER.internet().url(),
-                "https://twitter.com/" + authorUsername,
                 "https://github.com/" + authorUsername,
                 "https://linkedin.com/in/" + authorUsername
         );
@@ -237,7 +240,8 @@ class BlogAppIT extends AbstractTestcontainers {
                 createdAuthor.id().toString(),
                 List.of(createdTag.id().toString()),
                 true, // isPublished
-                readingTime
+                readingTime,
+                null // scheduledAt
         );
 
         // When - Create post
@@ -300,8 +304,9 @@ class BlogAppIT extends AbstractTestcontainers {
         String commentContent = FAKER.lorem().paragraph();
         CreateCommentRequest createCommentRequest = new CreateCommentRequest(commentContent, null);
 
-        // When - Create comment
+        // When - Create comment (with authentication)
         String commentResponseJson = mockMvc.perform(post("/api/v1/posts/{slug}/comments", postSlug)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createCommentRequest)))
                 .andExpect(status().isOk())
@@ -365,8 +370,9 @@ class BlogAppIT extends AbstractTestcontainers {
         String replyContent = FAKER.lorem().paragraph();
         CreateCommentRequest createReplyRequest = new CreateCommentRequest(replyContent, createdComment.id().toString());
 
-        // When - Create reply
+        // When - Create reply (with authentication)
         String replyResponseJson = mockMvc.perform(post("/api/v1/posts/{slug}/comments", postSlug)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createReplyRequest)))
                 .andExpect(status().isOk())
@@ -413,15 +419,15 @@ class BlogAppIT extends AbstractTestcontainers {
     @Test
     void itShouldRejectLoginWithInvalidCredentials() throws Exception {
         // Given - Invalid login credentials
-        LoginRequest invalidLoginRequest = new LoginRequest(
+        com.iabdinur.dto.AuthenticationRequest invalidAuthRequest = new com.iabdinur.dto.AuthenticationRequest(
                 FAKER.internet().emailAddress(),
                 FAKER.internet().password()
         );
 
         // When & Then - Login should fail
-        mockMvc.perform(post("/api/v1/users/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidLoginRequest)))
+                        .content(objectMapper.writeValueAsString(invalidAuthRequest)))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -436,11 +442,12 @@ class BlogAppIT extends AbstractTestcontainers {
                 postSlug,
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                FAKER.internet().image(),
+                FAKER.internet().avatar(),
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
-                FAKER.random().nextInt(5, 30)
+                FAKER.random().nextInt(5, 30),
+                null // scheduledAt
         );
 
         mockMvc.perform(post("/api/v1/posts")
@@ -472,11 +479,12 @@ class BlogAppIT extends AbstractTestcontainers {
                 postSlug,
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                FAKER.internet().image(),
+                FAKER.internet().avatar(),
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
-                FAKER.random().nextInt(5, 30)
+                FAKER.random().nextInt(5, 30),
+                null // scheduledAt
         );
 
         mockMvc.perform(post("/api/v1/posts")
@@ -585,10 +593,9 @@ class BlogAppIT extends AbstractTestcontainers {
                 authorEmail,
                 authorBio,
                 FAKER.internet().avatar(),
-                FAKER.internet().image(),
+                FAKER.internet().avatar(),
                 FAKER.address().city(),
                 FAKER.internet().url(),
-                "https://twitter.com/" + authorUsername,
                 "https://github.com/" + authorUsername,
                 "https://linkedin.com/in/" + authorUsername
         );
@@ -614,10 +621,9 @@ class BlogAppIT extends AbstractTestcontainers {
                 authorEmail, // Keep same email
                 updatedAuthorBio,
                 FAKER.internet().avatar(),
-                FAKER.internet().image(),
+                FAKER.internet().avatar(),
                 FAKER.address().city(),
                 FAKER.internet().url(),
-                "https://twitter.com/" + authorUsername,
                 "https://github.com/" + authorUsername,
                 "https://linkedin.com/in/" + authorUsername
         );
@@ -651,7 +657,8 @@ class BlogAppIT extends AbstractTestcontainers {
                 createdAuthor.id().toString(),
                 List.of(updatedTag.id().toString()),
                 true, // isPublished
-                readingTime
+                readingTime,
+                null // scheduledAt
         );
 
         String postResponseJson = mockMvc.perform(post("/api/v1/posts")
@@ -691,7 +698,8 @@ class BlogAppIT extends AbstractTestcontainers {
                 createdAuthor.id().toString(),
                 List.of(updatedTag.id().toString()),
                 true,
-                readingTime
+                readingTime,
+                null // scheduledAt
         );
 
         String updatedPostResponseJson = mockMvc.perform(put("/api/v1/posts/{slug}", postSlug)

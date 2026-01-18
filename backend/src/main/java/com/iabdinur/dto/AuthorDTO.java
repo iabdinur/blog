@@ -16,13 +16,11 @@ public record AuthorDTO(
     String website,
     Map<String, String> socialLinks,
     Integer followersCount,
-    Integer followingCount,
     Integer postsCount,
     String joinedAt
 ) {
     public static AuthorDTO fromEntity(com.iabdinur.model.Author author) {
         Map<String, String> socialLinks = Map.of(
-            "twitter", author.getTwitter() != null ? author.getTwitter() : "",
             "github", author.getGithub() != null ? author.getGithub() : "",
             "linkedin", author.getLinkedin() != null ? author.getLinkedin() : ""
         );
@@ -39,7 +37,6 @@ public record AuthorDTO(
             author.getWebsite(),
             socialLinks,
             author.getFollowersCount(),
-            author.getFollowingCount(),
             author.getPostsCount(),
             author.getJoinedAt() != null ? author.getJoinedAt().toString() : null
         );

@@ -41,9 +41,6 @@ public class Author {
     @Column(name = "website", columnDefinition = "TEXT")
     private String website;
 
-    @Column(name = "twitter", columnDefinition = "TEXT")
-    private String twitter;
-
     @Column(name = "github", columnDefinition = "TEXT")
     private String github;
 
@@ -52,9 +49,6 @@ public class Author {
 
     @Column(name = "followers_count", nullable = false)
     private Integer followersCount;
-
-    @Column(name = "following_count", nullable = false)
-    private Integer followingCount;
 
     @Column(name = "posts_count", nullable = false)
     private Integer postsCount;
@@ -77,7 +71,6 @@ public class Author {
         this.username = username;
         this.email = email;
         this.followersCount = 0;
-        this.followingCount = 0;
         this.postsCount = 0;
         this.joinedAt = LocalDateTime.now();
         this.createdAt = LocalDateTime.now();
@@ -90,7 +83,6 @@ public class Author {
         this.username = username;
         this.email = email;
         this.followersCount = 0;
-        this.followingCount = 0;
         this.postsCount = 0;
         this.joinedAt = joinedAt;
         this.createdAt = createdAt;
@@ -170,14 +162,6 @@ public class Author {
         this.website = website;
     }
 
-    public String getTwitter() {
-        return twitter;
-    }
-
-    public void setTwitter(String twitter) {
-        this.twitter = twitter;
-    }
-
     public String getGithub() {
         return github;
     }
@@ -200,14 +184,6 @@ public class Author {
 
     public void setFollowersCount(Integer followersCount) {
         this.followersCount = followersCount;
-    }
-
-    public Integer getFollowingCount() {
-        return followingCount;
-    }
-
-    public void setFollowingCount(Integer followingCount) {
-        this.followingCount = followingCount;
     }
 
     public Integer getPostsCount() {
@@ -254,11 +230,9 @@ public class Author {
                 ", coverImage='" + coverImage + '\'' +
                 ", location='" + location + '\'' +
                 ", website='" + website + '\'' +
-                ", twitter='" + twitter + '\'' +
                 ", github='" + github + '\'' +
                 ", linkedin='" + linkedin + '\'' +
                 ", followersCount=" + followersCount +
-                ", followingCount=" + followingCount +
                 ", postsCount=" + postsCount +
                 ", joinedAt=" + joinedAt +
                 ", createdAt=" + createdAt +

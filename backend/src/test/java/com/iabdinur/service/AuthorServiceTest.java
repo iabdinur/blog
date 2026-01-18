@@ -166,13 +166,12 @@ class AuthorServiceTest {
                 FAKER.name().username(),
                 FAKER.internet().emailAddress(),
                 FAKER.lorem().sentence(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+                null, // avatar
+                null, // coverImage
+                null, // location
+                null, // website
+                null, // github
+                null  // linkedin
         );
 
         // Mock insertAuthor to set an ID on the author
@@ -212,13 +211,12 @@ class AuthorServiceTest {
                 author.getUsername(),
                 author.getEmail(),
                 newBio,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+                null, // avatar
+                null, // coverImage
+                null, // location
+                null, // website
+                null, // github
+                null  // linkedin
         );
 
         when(authorDao.selectAuthorByUsername(author.getUsername())).thenReturn(Optional.of(author));
@@ -244,14 +242,13 @@ class AuthorServiceTest {
                 FAKER.name().fullName(),
                 username,
                 FAKER.internet().emailAddress(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+                null, // bio
+                null, // avatar
+                null, // coverImage
+                null, // location
+                null, // website
+                null, // github
+                null  // linkedin
         );
 
         when(authorDao.selectAuthorByUsername(username)).thenReturn(Optional.empty());

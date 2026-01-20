@@ -13,7 +13,6 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Avatar,
 } from '@chakra-ui/react'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
 import { FaBars, FaTimes, FaEnvelope, FaChevronDown } from 'react-icons/fa'
@@ -22,7 +21,12 @@ import { FiLogIn } from 'react-icons/fi'
 import { ThemeToggleButton } from './ThemeToggleButton'
 import { useUIStore } from '@/store/useUIStore'
 import { LoginRegisterModal } from '@/components/ui/LoginRegisterModal'
+import { Avatar } from '@/components/ui/Avatar'
 import { useState, useEffect } from 'react'
+import { apiClient } from '@/api/client'
+import { decodeJWT, getUserEmailFromToken } from '@/utils/auth'
+import { useTags } from '@/api/tags'
+import { Tag } from '@/types'
 
 export const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure()
@@ -34,34 +38,87 @@ export const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
+  const { data: tagsData } = useTags()
+  
+  // Sort tags alphabetically
+  const sortedTags = tagsData
+    ? [...tagsData].sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
+    : []
   
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const token = localStorage.getItem('auth_token')
-        setIsAuthenticated(!!token)
-        // Try to get user email from token if needed
-        if (token) {
-          try {
-            // JWT token payload (simple decode, not verified - just for display)
-            const parts = token.split('.')
-            if (parts.length === 3) {
-              const payload = JSON.parse(atob(parts[1]))
-              setUserEmail(payload.sub || payload.username || null)
-            } else {
-              setUserEmail(null)
-            }
-          } catch (e) {
-            // If token decode fails, just use authenticated state
+        if (!token) {
+          setIsAuthenticated(false)
+          setUserEmail(null)
+          setUserName(null)
+          return
+        }
+
+        // Decode token to check if expired
+        const decoded = decodeJWT(token)
+        if (!decoded) {
+          // Invalid token format
+          localStorage.removeItem('auth_token')
+          setIsAuthenticated(false)
+          setUserEmail(null)
+          setUserName(null)
+          return
+        }
+
+        // Check if token is expired
+        if (decoded.exp) {
+          const expirationTime = decoded.exp * 1000 // Convert to milliseconds
+          if (Date.now() >= expirationTime) {
+            // Token expired
+            localStorage.removeItem('auth_token')
+            setIsAuthenticated(false)
             setUserEmail(null)
+            setUserName(null)
+            return
+          }
+        }
+
+        // Token exists and not expired, validate with backend
+        const email = getUserEmailFromToken(token)
+        if (email) {
+          try {
+            // Try to fetch user info to validate token
+            const userResponse = await apiClient.get(`/users/${encodeURIComponent(email)}`)
+            // Token is valid
+            setIsAuthenticated(true)
+            setUserEmail(email)
+            // Store user name for Avatar consistency
+            setUserName(userResponse.data.name || null)
+          } catch (error: any) {
+            // Token invalid or user not found
+            if (error.response?.status === 401 || error.response?.status === 404) {
+              localStorage.removeItem('auth_token')
+              setIsAuthenticated(false)
+              setUserEmail(null)
+              setUserName(null)
+            } else {
+              // Other error, keep token but don't set as authenticated
+              setIsAuthenticated(false)
+              setUserEmail(null)
+              setUserName(null)
+            }
           }
         } else {
+          // No email in token
+          localStorage.removeItem('auth_token')
+          setIsAuthenticated(false)
           setUserEmail(null)
+          setUserName(null)
         }
       } catch (error) {
         // Handle any localStorage errors
+        localStorage.removeItem('auth_token')
         setIsAuthenticated(false)
         setUserEmail(null)
+        setUserName(null)
       }
     }
     checkAuth()
@@ -96,21 +153,25 @@ export const Navbar = () => {
     localStorage.removeItem('auth_token')
     setIsAuthenticated(false)
     setUserEmail(null)
+    setUserName(null)
+    navigate('/')
   }
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = async () => {
     setIsAuthenticated(true)
     const token = localStorage.getItem('auth_token')
     if (token) {
-      try {
-        const parts = token.split('.')
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]))
-          setUserEmail(payload.sub || payload.username || null)
+      const email = getUserEmailFromToken(token)
+      setUserEmail(email)
+      // Fetch user name for Avatar consistency
+      if (email) {
+        try {
+          const userResponse = await apiClient.get(`/users/${encodeURIComponent(email)}`)
+          setUserName(userResponse.data.name || null)
+        } catch (error) {
+          // If fetch fails, just use email
+          setUserName(null)
         }
-      } catch (e) {
-        // Ignore decode errors
-        setUserEmail(null)
       }
     }
   }
@@ -180,24 +241,11 @@ export const Navbar = () => {
                     </HStack>
                   </MenuButton>
                   <MenuList>
-                    <MenuItem as={RouterLink} to="/series/ai">
-                      AI
-                    </MenuItem>
-                    <MenuItem as={RouterLink} to="/series/devops">
-                      DevOps
-                    </MenuItem>
-                    <MenuItem as={RouterLink} to="/series/interview-prep">
-                      Interview Prep
-                    </MenuItem>
-                    <MenuItem as={RouterLink} to="/series/system-design">
-                      System Design
-                    </MenuItem>
-                    <MenuItem as={RouterLink} to="/series/uiuc-mcs">
-                      UIUC MCS
-                    </MenuItem>
-                    <MenuItem as={RouterLink} to="/series/software-engineering">
-                      Software Engineering
-                    </MenuItem>
+                    {sortedTags.map((tag: Tag) => (
+                      <MenuItem key={tag.id} as={RouterLink} to={`/series/${tag.slug}`}>
+                        {tag.name}
+                      </MenuItem>
+                    ))}
                   </MenuList>
                 </>
               )}
@@ -232,7 +280,7 @@ export const Navbar = () => {
                 icon={
                   <Avatar
                     size="sm"
-                    name={userEmail || 'User'}
+                    name={userName || userEmail || 'User'}
                     src={userEmail ? `/api/v1/users/${encodeURIComponent(userEmail)}/profile-image` : undefined}
                     onError={() => {
                       // Silently fail if image can't load
@@ -240,11 +288,10 @@ export const Navbar = () => {
                   />
                 }
                 variant="ghost"
-                borderRadius="full"
               />
               <MenuList>
-                <MenuItem onClick={() => navigate('/profile-settings')}>
-                  Profile Settings
+                <MenuItem onClick={() => navigate('/profile')}>
+                  Profile
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   Logout
@@ -304,29 +351,16 @@ export const Navbar = () => {
             <Text fontWeight="medium" color="gray.600" _dark={{ color: 'gray.400' }}>
               Series
             </Text>
-            <Link as={RouterLink} to="/series/ai" onClick={onToggle} pl={4}>
-              AI
-            </Link>
-            <Link as={RouterLink} to="/series/devops" onClick={onToggle} pl={4}>
-              DevOps
-            </Link>
-            <Link as={RouterLink} to="/series/interview-prep" onClick={onToggle} pl={4}>
-              Interview Prep
-            </Link>
-            <Link as={RouterLink} to="/series/system-design" onClick={onToggle} pl={4}>
-              System Design
-            </Link>
-            <Link as={RouterLink} to="/series/uiuc-mcs" onClick={onToggle} pl={4}>
-              UIUC MCS
-            </Link>
-            <Link as={RouterLink} to="/series/software-engineering" onClick={onToggle} pl={4}>
-              Software Engineering
-            </Link>
+            {sortedTags.map((tag: Tag) => (
+              <Link key={tag.id} as={RouterLink} to={`/series/${tag.slug}`} onClick={onToggle} pl={4}>
+                {tag.name}
+              </Link>
+            ))}
             <HStack spacing={4} pt={4} borderTop="1px" borderColor={borderColor}>
               {isAuthenticated ? (
                 <>
-                  <Link as={RouterLink} to="/profile-settings" onClick={onToggle}>
-                    Profile Settings
+                  <Link as={RouterLink} to="/profile" onClick={onToggle}>
+                    Profile
                   </Link>
                   <Link onClick={() => { handleLogout(); onToggle(); }}>
                     Logout

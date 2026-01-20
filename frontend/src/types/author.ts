@@ -9,12 +9,10 @@ export interface Author {
   location?: string
   website?: string
   socialLinks?: {
-    twitter?: string
     github?: string
     linkedin?: string
   }
   followersCount: number
-  followingCount: number
   postsCount: number
   joinedAt: string
 }

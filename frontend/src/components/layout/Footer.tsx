@@ -1,4 +1,4 @@
-import { Box, Container, Stack, Text, Link, HStack, Icon, VStack, useColorModeValue } from '@chakra-ui/react'
+import { Box, Container, Text, Link, HStack, Icon, VStack, useColorModeValue } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { FaRss, FaGithub, FaLinkedin } from 'react-icons/fa'
 

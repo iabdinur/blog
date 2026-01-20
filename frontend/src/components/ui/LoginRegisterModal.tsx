@@ -6,14 +6,12 @@ import {
   ModalBody,
   ModalCloseButton,
   VStack,
-  Heading,
   Box,
   Input,
   Button,
   Text,
   Alert,
   AlertIcon,
-  HStack,
   Tabs,
   TabList,
   TabPanels,
@@ -24,15 +22,17 @@ import {
   FormLabel,
   Textarea,
   Checkbox,
-  Avatar,
   Center,
   Icon,
 } from '@chakra-ui/react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Avatar } from './Avatar'
 import { useSendVerificationCode, useVerifyCode, useLogin } from '@/api/admin'
 import { apiClient } from '@/api/client'
 import { FaCamera } from 'react-icons/fa'
 import { useUIStore } from '@/store/useUIStore'
+import { isAuthor } from '@/utils/auth'
 
 interface LoginRegisterModalProps {
   isOpen: boolean
@@ -41,6 +41,7 @@ interface LoginRegisterModalProps {
 }
 
 export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegisterModalProps) => {
+  const navigate = useNavigate()
   const [tabIndex, setTabIndex] = useState(0)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -63,7 +64,6 @@ export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegister
   const bg = useColorModeValue('white', 'gray.800')
   const textColor = useColorModeValue('gray.900', 'gray.100')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
-  const hoverBg = useColorModeValue('gray.50', 'gray.700')
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -144,8 +144,15 @@ export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegister
     e.preventDefault()
     try {
       await verifyCodeMutation.mutateAsync({ email, code })
-      onSuccess()
-      onClose()
+      // Check if user is an author and redirect accordingly
+      const token = localStorage.getItem('auth_token')
+      if (token && isAuthor(token)) {
+        navigate('/authors/posts')
+        onClose()
+      } else {
+        onSuccess()
+        onClose()
+      }
     } catch (error) {
       // Error handled by mutation
     }
@@ -155,8 +162,15 @@ export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegister
     e.preventDefault()
     try {
       await loginMutation.mutateAsync({ username: email, password })
-      onSuccess()
-      onClose()
+      // Check if user is an author and redirect accordingly
+      const token = localStorage.getItem('auth_token')
+      if (token && isAuthor(token)) {
+        navigate('/authors/posts')
+        onClose()
+      } else {
+        onSuccess()
+        onClose()
+      }
     } catch (error) {
       // Error handled by mutation
     }

@@ -14,8 +14,15 @@ import { Layout } from '@/components/layout/Layout'
 
 export const Post = () => {
   const { slug } = useParams<{ slug: string }>()
-  const { data: post, isLoading, error } = usePost(slug || '')
-  const { data: comments } = useComments(slug || '')
+  
+  // Validate slug - if it's the literal string "{slug}" or URL-encoded version, treat as invalid
+  const isValidSlug = slug && 
+                       slug.trim() !== '' && 
+                       slug !== '{slug}' && 
+                       slug !== '%7Bslug%7D'
+  
+  const { data: post, isLoading, error } = usePost(isValidSlug ? slug : '')
+  const { data: comments } = useComments(isValidSlug ? slug : '')
   const queryClient = useQueryClient()
   const viewedPosts = useRef<Set<string>>(new Set())
 
@@ -37,6 +44,16 @@ export const Post = () => {
       <Layout>
         <Center py={8}>
           <Spinner size="xl" />
+        </Center>
+      </Layout>
+    )
+  }
+
+  if (!isValidSlug) {
+    return (
+      <Layout>
+        <Center py={8}>
+          <Text>Invalid post URL</Text>
         </Center>
       </Layout>
     )

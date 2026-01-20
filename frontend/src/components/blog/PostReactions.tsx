@@ -30,7 +30,6 @@ export const PostReactions = ({ post, commentsCount }: PostReactionsProps) => {
   return (
     <HStack spacing={4}>
       <Box
-        as="button"
         onClick={handleLike}
         cursor="pointer"
         border="1px solid"
@@ -43,6 +42,14 @@ export const PostReactions = ({ post, commentsCount }: PostReactionsProps) => {
         alignItems="center"
         justifyContent="center"
         _hover={{ opacity: 0.7 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleLike()
+          }
+        }}
       >
         <VStack spacing={0} align="center">
           <IconButton
@@ -53,12 +60,12 @@ export const PostReactions = ({ post, commentsCount }: PostReactionsProps) => {
             isLoading={likePost.isPending}
             size="lg"
             _hover={{ color: '#145F95', bg: 'transparent' }}
+            pointerEvents="none"
           />
           <Text fontSize="sm" fontWeight="medium" mt="-1">{post.likes}</Text>
         </VStack>
       </Box>
       <Box
-        as="button"
         onClick={() => {
           const commentsSection = document.getElementById('comments-section')
           if (commentsSection) {
@@ -76,6 +83,17 @@ export const PostReactions = ({ post, commentsCount }: PostReactionsProps) => {
         alignItems="center"
         justifyContent="center"
         _hover={{ opacity: 0.7 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            const commentsSection = document.getElementById('comments-section')
+            if (commentsSection) {
+              commentsSection.scrollIntoView({ behavior: 'smooth' })
+            }
+          }
+        }}
       >
         <VStack spacing={0} align="center">
           <IconButton

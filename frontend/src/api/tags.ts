@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { Tag } from '@/types'
 import { apiClient } from './client'
 
 export const tagsApi = {

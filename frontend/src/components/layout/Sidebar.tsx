@@ -9,6 +9,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom'
 import { useTags } from '@/api/tags'
 import { Badge } from '../ui/Badge'
+import { Tag } from '@/types'
 
 export const Sidebar = () => {
   const { data: tagsData, isLoading } = useTags()
@@ -37,20 +38,24 @@ export const Sidebar = () => {
           </Text>
         ) : (
           <VStack align="stretch" spacing={2}>
-            {tagsData?.slice(0, 10).map((tag) => (
-              <Link
-                key={tag.id}
-                as={RouterLink}
-                to={`/series/${tag.slug}`}
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                _hover={{ color: 'brand.500' }}
-              >
-                <Text fontSize="sm">{tag.name}</Text>
-                <Badge>{tag.postsCount}</Badge>
-              </Link>
-            ))}
+            {tagsData
+              ?.slice()
+              .sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
+              .slice(0, 10)
+              .map((tag: Tag) => (
+                <Link
+                  key={tag.id}
+                  as={RouterLink}
+                  to={`/series/${tag.slug}`}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  _hover={{ color: 'brand.500' }}
+                >
+                  <Text fontSize="sm">{tag.name}</Text>
+                  <Badge>{tag.postsCount}</Badge>
+                </Link>
+              ))}
           </VStack>
         )}
       </VStack>

@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
-import { Post } from '@/types'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from './client'
 
 export const postsApi = {
-  getAll: async (params?: { page?: number; limit?: number; tag?: string; author?: string; sort?: string }) => {
+  getAll: async (params?: { page?: number; limit?: number; tag?: string; author?: string; sort?: string; exclude?: string }) => {
     const response = await apiClient.get('/posts', {
       params: {
         page: params?.page || 1,
@@ -11,6 +10,7 @@ export const postsApi = {
         tag: params?.tag,
         author: params?.author,
         sort: params?.sort || 'latest',
+        exclude: params?.exclude,
       },
     })
     return response.data
@@ -57,9 +57,57 @@ export const postsApi = {
   unlikePost: async (slug: string) => {
     await apiClient.delete(`/posts/${slug}/like`)
   },
+  getDrafts: async (params?: { page?: number; limit?: number }) => {
+    console.log('getDrafts - calling API with params:', params)
+    const response = await apiClient.get('/posts/drafts', {
+      params: {
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+      },
+    })
+    console.log('getDrafts - response:', response.data)
+    return response.data
+  },
+  publishDraft: async (slug: string) => {
+    const response = await apiClient.post(`/posts/${slug}/publish`)
+    return response.data
+  },
 }
 
-export const usePosts = (params?: { page?: number; limit?: number; tag?: string; author?: string; sort?: string }) => {
+export const useDrafts = (params?: { page?: number; limit?: number }) => {
+  const isAuthenticated = !!localStorage.getItem('auth_token')
+  return useQuery({
+    queryKey: ['drafts', params?.page, params?.limit],
+    queryFn: () => postsApi.getDrafts(params),
+    enabled: isAuthenticated, // Only fetch when authenticated
+    retry: false, // Don't retry on auth errors
+    onError: (error) => { // Added error handling
+      console.error('Error fetching drafts:', error)
+    },
+    onSuccess: (data) => {
+      console.log('Drafts loaded successfully:', data)
+      console.log('Number of drafts:', data?.posts?.length || 0)
+      if (data?.posts) {
+        data.posts.forEach((post: any) => {
+          console.log(`Post: ${post.title}, Scheduled: ${post.scheduledAt}`)
+        })
+      }
+    },
+  })
+}
+
+export const usePublishDraft = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (slug: string) => postsApi.publishDraft(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drafts'] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+    },
+  })
+}
+
+export const usePosts = (params?: { page?: number; limit?: number; tag?: string; author?: string; sort?: string; exclude?: string }) => {
   return useQuery({
     queryKey: ['posts', params],
     queryFn: () => postsApi.getAll(params),

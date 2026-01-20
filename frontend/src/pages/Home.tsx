@@ -14,7 +14,7 @@ import { getFirstSentence } from '@/utils/text'
 export const Home = () => {
   const [activeTab, setActiveTab] = useState<'latest' | 'top' | 'discussions'>('latest')
   const { data, isLoading, error } = usePosts({ limit: 6, sort: activeTab })
-  const { data: featuredPost } = usePost('welcome-to-our-weekly-newsletter')
+  const { data: featuredPost } = usePost('welcome-to-my-weekly-newsletter')
   const { setSearchPopupOpen } = useUIStore()
 
   const posts = data?.posts || []

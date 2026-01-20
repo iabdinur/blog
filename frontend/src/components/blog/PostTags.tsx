@@ -10,9 +10,12 @@ export interface PostTagsProps {
 export const PostTags = ({ tags }: PostTagsProps) => {
   if (tags.length === 0) return null
 
+  // Sort tags alphabetically by name
+  const sortedTags = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+
   return (
     <HStack spacing={2} flexWrap="wrap">
-      {tags.map((tag) => (
+      {sortedTags.map((tag) => (
         <Link key={tag.id} as={RouterLink} to={`/series/${tag.slug}`} _hover={{ textDecoration: 'none' }}>
           <Badge colorScheme="brand" variant="subtle">
             {tag.name}

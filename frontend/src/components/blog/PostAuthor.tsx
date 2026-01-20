@@ -15,15 +15,30 @@ export const PostAuthor = ({ author, size = 'md', showBio = false, showJoinedDat
   const avatarSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'md'
   const fontSize = size === 'sm' ? 'sm' : 'md'
 
+  // Use profile image endpoint when email exists
+  const getAvatarSrc = () => {
+    if (author.email) {
+      return `/api/v1/users/${encodeURIComponent(author.email)}/profile-image`
+    }
+    return undefined
+  }
+
   return (
     <HStack spacing={3}>
-      <Link as={RouterLink} to={`/author/${author.username}`}>
-        <Avatar name={author.name} src="/images/profile.jpg" size={avatarSize} />
+      <Link as={RouterLink} to="/author">
+        <Avatar 
+          name={author.name} 
+          src={getAvatarSrc()} 
+          size={avatarSize}
+          onError={() => {
+            // Silently fail if image can't load - will show initials instead
+          }}
+        />
       </Link>
       <VStack align="start" spacing={0}>
         <Link
           as={RouterLink}
-          to={`/author/${author.username}`}
+          to="/author"
           fontWeight="medium"
           fontSize={fontSize}
           _hover={{ color: 'brand.500' }}

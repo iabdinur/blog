@@ -1,4 +1,5 @@
-import { Avatar as ChakraAvatar, AvatarProps as ChakraAvatarProps, AvatarBadge, AvatarGroup } from '@chakra-ui/react'
+import { Avatar as ChakraAvatar, AvatarProps as ChakraAvatarProps, AvatarBadge, AvatarGroup, useColorModeValue } from '@chakra-ui/react'
+import { colorPalettes } from '@/compositions/lib/color-palettes'
 
 export interface AvatarProps extends ChakraAvatarProps {
   name?: string
@@ -7,7 +8,17 @@ export interface AvatarProps extends ChakraAvatarProps {
 }
 
 export const Avatar = ({ name, src, size = 'md', ...props }: AvatarProps) => {
-  return <ChakraAvatar name={name} src={src} size={size} {...props} />
+  const bgColor = useColorModeValue(colorPalettes.grey[200], colorPalettes.grey[700])
+  
+  return (
+    <ChakraAvatar 
+      name={name} 
+      src={src} 
+      size={size}
+      bg={bgColor}
+      {...props} 
+    />
+  )
 }
 
 export { AvatarBadge, AvatarGroup }

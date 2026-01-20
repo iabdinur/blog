@@ -41,12 +41,11 @@ export const PostShare = ({ post }: PostShareProps) => {
 
   return (
     <Box
-      as="button"
       onClick={handleShare}
       cursor="pointer"
       border="1px solid"
       borderColor={borderColor}
-        borderRadius="xl"
+      borderRadius="xl"
       px={1}
       py={1.5}
       display="flex"
@@ -54,6 +53,14 @@ export const PostShare = ({ post }: PostShareProps) => {
       alignItems="center"
       justifyContent="center"
       _hover={{ opacity: 0.7 }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleShare()
+        }
+      }}
     >
       <VStack spacing={0} align="center">
         <IconButton

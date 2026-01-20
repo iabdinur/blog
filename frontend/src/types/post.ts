@@ -7,7 +7,9 @@ export interface Post {
   content: string
   excerpt: string
   coverImage?: string
+  contentImage?: string
   publishedAt: string
+  scheduledAt?: string
   updatedAt?: string
   author: Author
   tags: Tag[]
@@ -16,15 +18,5 @@ export interface Post {
   likes: number
   commentsCount: number
   isPublished: boolean
-}
-
-export interface PostMeta {
-  title: string
-  description: string
-  image?: string
-  publishedTime?: string
-  modifiedTime?: string
-  author?: string
-  tags?: string[]
 }
 

@@ -5,9 +5,11 @@ import { PostCard } from './PostCard'
 export interface PostListProps {
   posts: Post[]
   isLoading?: boolean
+  showPublishedLabel?: boolean
+  variant?: 'vertical' | 'horizontal'
 }
 
-export const PostList = ({ posts, isLoading }: PostListProps) => {
+export const PostList = ({ posts, isLoading, showPublishedLabel, variant = 'vertical' }: PostListProps) => {
   if (isLoading) {
     return (
       <Center py={8}>
@@ -27,7 +29,7 @@ export const PostList = ({ posts, isLoading }: PostListProps) => {
   return (
     <VStack spacing={6} align="stretch">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} showPublishedLabel={showPublishedLabel} variant={variant} />
       ))}
     </VStack>
   )

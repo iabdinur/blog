@@ -4,7 +4,7 @@ import { apiClient } from './client'
 // Account API
 export const accountApi = {
   login: async (username: string, password: string) => {
-    const response = await apiClient.post('/users/login', { email: username, password })
+    const response = await apiClient.post('/auth/login', { email: username, password })
     // Extract token from Authorization header
     const token = response.headers['authorization'] || response.headers['Authorization']
     if (token) {
@@ -108,8 +108,12 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: adminPostsApi.create,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate queries first
       queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['drafts'] })
+      // Actively refetch drafts to ensure data is fresh when navigating
+      await queryClient.refetchQueries({ queryKey: ['drafts'] })
     },
   })
 }
@@ -117,9 +121,22 @@ export const useCreatePost = () => {
 export const useUpdatePost = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ slug, post }: { slug: string; post: any }) => adminPostsApi.update(slug, post),
-    onSuccess: () => {
+    mutationFn: ({ slug, post }: { slug: string; post: any }) => {
+      console.log('Updating post:', slug, post)
+      return adminPostsApi.update(slug, post)
+    },
+    onSuccess: async () => {
+      // Invalidate queries first
       queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['drafts'] })
+      queryClient.invalidateQueries({ queryKey: ['post'] })
+      // Actively refetch drafts to ensure data is fresh when navigating
+      await queryClient.refetchQueries({ queryKey: ['drafts'] })
+    },
+    onError: (error: any) => {
+      console.error('Update post error:', error)
+      console.error('Error response data:', error.response?.data)
+      console.error('Error response status:', error.response?.status)
     },
   })
 }

@@ -117,7 +117,7 @@ export const Blog = () => {
           />
         </Flex>
 
-        <PostList posts={posts} isLoading={isLoading} />
+        <PostList posts={posts} isLoading={isLoading} variant="horizontal" />
       </VStack>
     </Layout>
   )

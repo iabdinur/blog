@@ -8,13 +8,13 @@ import { Search } from './pages/Search'
 import { Newsletter } from './pages/Newsletter'
 import { About } from './pages/About'
 import { NotFound } from './pages/NotFound'
-import { AdminLogin } from './pages/admin/Login'
-import { PostsList } from './pages/admin/PostsList'
-import { PostForm } from './pages/admin/PostForm'
-import { AuthorsList } from './pages/admin/AuthorsList'
-import { AuthorForm } from './pages/admin/AuthorForm'
-import { TagsList } from './pages/admin/TagsList'
-import { TagForm } from './pages/admin/TagForm'
+import { Profile } from './pages/Profile'
+import { AdminLogin } from './pages/author/Login'
+import { PostsList } from './pages/author/PostsList'
+import { PostForm } from './pages/author/PostForm'
+import { TagsList } from './pages/author/TagsList'
+import { DraftsList } from './pages/author/DraftsList'
+import { TagForm } from './pages/author/TagForm'
 
 function App() {
   return (
@@ -22,22 +22,27 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/archive" element={<Blog />} />
       <Route path="/post/:slug" element={<Post />} />
-      <Route path="/author/:username" element={<Author />} />
+      <Route path="/author" element={<Author />} />
       <Route path="/series/:slug" element={<Series />} />
       <Route path="/search" element={<Search />} />
       <Route path="/newsletter" element={<Newsletter />} />
       <Route path="/about" element={<About />} />
-      <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/posts" element={<PostsList />} />
-      <Route path="/admin/posts/new" element={<PostForm />} />
-      <Route path="/admin/posts/edit/:slug" element={<PostForm />} />
-      <Route path="/admin/authors" element={<AuthorsList />} />
-      <Route path="/admin/authors/new" element={<AuthorForm />} />
-      <Route path="/admin/authors/edit/:username" element={<AuthorForm />} />
-      <Route path="/admin/tags" element={<TagsList />} />
-      <Route path="/admin/tags/new" element={<TagForm />} />
-      <Route path="/admin/tags/edit/:slug" element={<TagForm />} />
+      <Route path="/profile" element={<Profile />} />
+      {/* Login route - works for both Authors and Readers */}
+      <Route path="/login" element={<AdminLogin />} />
+      {/* Authors Panel routes */}
+      <Route path="/authors" element={<Navigate to="/authors/posts" replace />} />
+      <Route path="/authors/posts" element={<PostsList />} />
+      <Route path="/authors/posts/new" element={<PostForm />} />
+      <Route path="/authors/posts/edit/:slug" element={<PostForm />} />
+      <Route path="/authors/drafts" element={<DraftsList />} />
+      <Route path="/authors/tags" element={<TagsList />} />
+      <Route path="/authors/tags/new" element={<TagForm />} />
+      <Route path="/authors/tags/edit/:slug" element={<TagForm />} />
+      {/* Legacy admin routes - redirect to authors */}
+      <Route path="/admin" element={<Navigate to="/authors/posts" replace />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+      <Route path="/admin/*" element={<Navigate to="/authors/posts" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

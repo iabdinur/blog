@@ -17,13 +17,15 @@ import {
   Heading,
   HStack,
   Badge,
+  useColorModeValue,
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
-import { useNavigate, Link as RouterLink, useSearchParams } from 'react-router-dom'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import { FaTimes } from 'react-icons/fa'
 import { CiSearch } from 'react-icons/ci'
 import { useUIStore } from '@/store/useUIStore'
 import { useSearch } from '@/api/search'
+import { Author, Post, Tag } from '@/types'
 
 // Helper function to get short name for series
 const getShortSeriesName = (fullName: string): string => {
@@ -39,9 +41,10 @@ export const SearchPopup = () => {
   const { searchPopupOpen, setSearchPopupOpen } = useUIStore()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [searchQuery, setSearchQuery] = useState('')
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { data: searchResults, isLoading } = useSearch(searchQuery, { limit: 10 })
+  const scrollbarThumbColor = useColorModeValue('#CBD5E0', '#4A5568')
+  const scrollbarThumbHoverColor = useColorModeValue('#A0AEC0', '#2D3748')
 
   useEffect(() => {
     if (searchPopupOpen) {
@@ -91,11 +94,11 @@ export const SearchPopup = () => {
   }, [isOpen, searchPopupOpen, setSearchPopupOpen, onClose])
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="xl" isCentered>
+    <Modal isOpen={isOpen} onClose={handleClose} size="xl" isCentered scrollBehavior="inside">
       <ModalOverlay />
-      <ModalContent maxH="80vh" h="600px" overflow="hidden">
-        <ModalBody p={0}>
-          <Box pt={2} pb={0}>
+      <ModalContent maxH="80vh" h="600px" display="flex" flexDirection="column" overflow="hidden">
+        <ModalBody p={0} display="flex" flexDirection="column" overflow="hidden" flex="1">
+          <Box pt={2} pb={0} flexShrink={0}>
             <Box px={6}>
               <form onSubmit={handleSubmit}>
                 <InputGroup size="md">
@@ -182,11 +185,27 @@ export const SearchPopup = () => {
 
           {searchQuery && (
             <Box
-              maxH="calc(80vh - 120px)"
+              flex="1"
               overflowY="auto"
+              overflowX="hidden"
               px={6}
               pb={6}
               pt={0.5}
+              sx={{
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'transparent',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: scrollbarThumbColor,
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  background: scrollbarThumbHoverColor,
+                },
+              }}
             >
               {isLoading ? (
                 <Box py={4}>
@@ -198,11 +217,11 @@ export const SearchPopup = () => {
                     <Box>
                       <Heading size="sm" mb={3}>Authors ({searchResults.authors.length})</Heading>
                       <VStack align="stretch" spacing={2}>
-                        {searchResults.authors.slice(0, 3).map((author) => (
+                        {searchResults.authors.slice(0, 3).map((author: Author) => (
                           <Link
                             key={author.id}
                             as={RouterLink}
-                            to={`/author/${author.username}`}
+                            to="/author"
                             onClick={handlePostClick}
                             p={2}
                             borderRadius="md"
@@ -224,7 +243,7 @@ export const SearchPopup = () => {
                     <Box>
                       <Heading size="sm" mb={3}>Posts ({searchResults.posts.length})</Heading>
                       <VStack align="stretch" spacing={2}>
-                        {searchResults.posts.slice(0, 5).map((post) => (
+                        {searchResults.posts.slice(0, 5).map((post: Post) => (
                           <Link
                             key={post.id}
                             as={RouterLink}
@@ -248,24 +267,28 @@ export const SearchPopup = () => {
                     <Box>
                       <Heading size="sm" mb={3}>Tags ({searchResults.tags.length})</Heading>
                       <VStack align="stretch" spacing={2}>
-                        {searchResults.tags.slice(0, 3).map((tag) => (
-                          <Link
-                            key={tag.id}
-                            as={RouterLink}
-                            to={`/series/${tag.slug}`}
-                            onClick={handlePostClick}
-                            p={2}
-                            borderRadius="md"
-                            _hover={{ bg: 'gray.100', _dark: { bg: 'gray.800' } }}
-                          >
-                            <Text fontWeight="medium">#{getShortSeriesName(tag.name)}</Text>
-                            {tag.description && (
-                              <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }} noOfLines={1}>
-                                {tag.description}
-                              </Text>
-                            )}
-                          </Link>
-                        ))}
+                        {searchResults.tags
+                          .slice()
+                          .sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
+                          .slice(0, 3)
+                          .map((tag: Tag) => (
+                            <Link
+                              key={tag.id}
+                              as={RouterLink}
+                              to={`/series/${tag.slug}`}
+                              onClick={handlePostClick}
+                              p={2}
+                              borderRadius="md"
+                              _hover={{ bg: 'gray.100', _dark: { bg: 'gray.800' } }}
+                            >
+                              <Text fontWeight="medium">#{getShortSeriesName(tag.name)}</Text>
+                              {tag.description && (
+                                <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }} noOfLines={1}>
+                                  {tag.description}
+                                </Text>
+                              )}
+                            </Link>
+                          ))}
                       </VStack>
                     </Box>
                   )}

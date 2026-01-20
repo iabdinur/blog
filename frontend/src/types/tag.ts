@@ -4,6 +4,5 @@ export interface Tag {
   slug: string
   description?: string
   postsCount: number
-  color?: string
 }
 

@@ -62,6 +62,14 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
           maxW: '100%',
           borderRadius: 'md',
           my: 4,
+          display: 'block',
+          mx: 'auto',
+          boxShadow: 'md',
+          _hover: {
+            boxShadow: 'lg',
+            transform: 'scale(1.01)',
+            transition: 'all 0.2s',
+          },
         },
         '& table': {
           width: '100%',

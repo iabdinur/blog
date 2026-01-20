@@ -19,7 +19,7 @@ VALUES (
     'Ibrahim Abdinur',
     'iabdinur',
     'iabdinur@icloud.com',
-    'Full-stack developer passionate about web technologies, AI, and developer tools.',
+    'Software engineer building cloud based applications, microservices, and data pipelines',
     'https://api.dicebear.com/7.x/avataaars/svg?seed=ibrahim',
     'https://iabdinur.com',
     'iabdinur',
@@ -46,7 +46,7 @@ VALUES
 -- and tags by their slugs, then we'll link them in post_tags
 
 -- Post 1: Welcome to My Weekly Newsletter
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Welcome to My Weekly Newsletter',
     'welcome-to-my-weekly-newsletter',
@@ -55,6 +55,8 @@ VALUES (
 ## Hello and Welcome!
 
 I''m thrilled to welcome you to our weekly newsletter! This is your go-to source for the latest insights, tutorials, and news in the world of web development, artificial intelligence, and technology.
+
+{{content_image}}
 
 ## What to Expect
 
@@ -98,7 +100,7 @@ To make the most of this newsletter:
 
 ## About Me
 
-I''m Ibrahim Osman Abdinur, a full-stack developer passionate about creating educational content that helps developers level up their skills. With experience across the stack, I''m excited to share what I''ve learned and continue learning alongside you.
+I''m a full-stack developer passionate about creating educational content that helps developers level up their skills. With experience across the stack, I''m excited to share what I''ve learned and continue learning alongside you.
 
 ## Let''s Connect
 
@@ -115,11 +117,10 @@ In our next edition, we''ll dive into **Building Modern Web Applications with Re
 
 Thank you for joining me on this journey. I''m excited to share knowledge, learn together, and build amazing things!
 
-Happy coding! 🚀
-
-*Ibrahim Osman Abdinur*',
+Happy coding! 🚀',
     'Join us on this journey as we explore the latest in web development, AI, and technology. Get ready for weekly insights, tutorials, and industry news.',
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-06 00:00:00',
     true,
@@ -132,7 +133,7 @@ Happy coding! 🚀
 );
 
 -- Post 2: Building Modern Web Applications with React and TypeScript
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Building Modern Web Applications with React and TypeScript',
     'building-modern-web-apps-react-typescript',
@@ -148,6 +149,8 @@ TypeScript adds static typing to JavaScript, which helps catch errors early and 
 - **Better IDE Support**: Autocomplete and IntelliSense
 - **Improved Refactoring**: Confidently rename and restructure code
 - **Enhanced Documentation**: Types serve as inline documentation
+
+{{content_image}}
 
 ## Getting Started
 
@@ -184,6 +187,7 @@ const Button: React.FC<ButtonProps> = ({ label, onClick, variant = ''primary'' }
 React and TypeScript together provide a robust foundation for building scalable applications. Start incorporating TypeScript into your React projects today!',
     'Learn how to build scalable and maintainable web applications using React 18 and TypeScript. This comprehensive guide covers best practices, patterns, and real-world examples.',
     'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
+    'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-03 10:00:00',
     true,
@@ -196,7 +200,7 @@ React and TypeScript together provide a robust foundation for building scalable 
 );
 
 -- Post 3: Understanding React Hooks
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Understanding React Hooks: A Deep Dive',
     'understanding-react-hooks-deep-dive',
@@ -229,6 +233,8 @@ function Counter() {
 }
 ```
 
+{{content_image}}
+
 ## Custom Hooks
 
 Create reusable logic with custom hooks:
@@ -260,6 +266,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 Hooks make React code more readable and maintainable. Practice these patterns to become a React expert!',
     'Master React Hooks with this comprehensive guide. From useState to custom hooks, learn everything you need to know to write modern React code.',
     'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
+    'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-02 14:30:00',
     true,
@@ -272,7 +279,7 @@ Hooks make React code more readable and maintainable. Practice these patterns to
 );
 
 -- Post 4: TypeScript Advanced Types
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'TypeScript Advanced Types You Should Know',
     'typescript-advanced-types',
@@ -333,11 +340,14 @@ type Shade = ''light'' | ''dark''
 type ColorShade = `$${Shade}-$${Color}` // ''light-red'' | ''dark-red'' | ...
 ```
 
+{{content_image}}
+
 ## Conclusion
 
 These advanced TypeScript features enable you to write more expressive and type-safe code. Experiment with them in your projects!',
     'Discover powerful TypeScript features that will take your code to the next level. Utility types, conditional types, and more.',
     'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800',
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-01 09:00:00',
     true,
@@ -350,7 +360,7 @@ These advanced TypeScript features enable you to write more expressive and type-
 );
 
 -- Post 5: Getting Started with AI Development
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Getting Started with AI Development: A Practical Guide',
     'getting-started-ai-development',
@@ -371,6 +381,8 @@ You have two main options:
    - Full control
    - Privacy-friendly
    - Requires ML expertise
+
+{{content_image}}
 
 ## Quick Start with OpenAI API
 
@@ -411,6 +423,7 @@ async function generateText(prompt: string) {
 AI development is more accessible than ever. Start experimenting and see how AI can enhance your applications!',
     'Learn how to integrate AI into your applications. From APIs to machine learning models, discover the tools and techniques you need.',
     'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+    'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2025-12-30 16:00:00',
     true,
@@ -423,7 +436,7 @@ AI development is more accessible than ever. Start experimenting and see how AI 
 );
 
 -- Post 6: Essential Developer Tools
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Essential Developer Tools for 2026',
     'essential-developer-tools-2026',
@@ -487,6 +500,8 @@ gh pr merge
 - **Cursor** - AI-powered editor
 - **ChatGPT** - General assistance
 
+{{content_image}}
+
 ## Productivity
 
 - **Notion** - Documentation
@@ -499,6 +514,7 @@ gh pr merge
 These tools form a solid foundation for modern development. Experiment and find what works best for your workflow!',
     'Boost your productivity with these must-have developer tools. From code editors to debugging tools, discover what top developers are using.',
     'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2025-12-28 11:00:00',
     true,
@@ -511,7 +527,7 @@ These tools form a solid foundation for modern development. Experiment and find 
 );
 
 -- Draft Post: Database Design Best Practices (NOT PUBLISHED)
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Database Design Best Practices for Modern Applications',
     'database-design-best-practices',
@@ -541,11 +557,14 @@ CREATE INDEX idx_comment_post_id ON comments(post_id);
 
 Always use connection pooling to manage database connections efficiently.
 
+{{content_image}}
+
 ## Conclusion
 
 This is a work in progress. More content coming soon!',
     'Learn the essential principles of database design that will help you build scalable and maintainable applications.',
     'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800',
+    'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     NULL,
     false,
@@ -558,7 +577,7 @@ This is a work in progress. More content coming soon!',
 );
 
 -- Post 7: Mastering Git Workflows
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Mastering Git Workflows: Best Practices for Team Collaboration',
     'mastering-git-workflows',
@@ -583,6 +602,8 @@ Continuous integration with short-lived branches.
 - Keep commits focused and atomic
 - Use conventional commit format when possible
 
+{{content_image}}
+
 ## Code Review Process
 
 Effective code reviews improve code quality and team knowledge sharing.
@@ -592,6 +613,7 @@ Effective code reviews improve code quality and team knowledge sharing.
 Adopting the right Git workflow for your team can significantly improve productivity and code quality.',
     'Learn essential Git workflows and best practices that will improve your team collaboration and code quality.',
     'https://images.unsplash.com/photo-1556075798-4825dfaaf5fb?w=800',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-05 14:00:00',
     true,
@@ -604,7 +626,7 @@ Adopting the right Git workflow for your team can significantly improve producti
 );
 
 -- Post 8: RESTful API Design Principles
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'RESTful API Design Principles: Building Scalable Web Services',
     'restful-api-design-principles',
@@ -636,6 +658,8 @@ Use appropriate HTTP status codes to communicate results clearly.
 
 Consistent error responses help API consumers handle failures gracefully.
 
+{{content_image}}
+
 ## Documentation
 
 Comprehensive API documentation is essential for adoption and maintenance.
@@ -645,6 +669,7 @@ Comprehensive API documentation is essential for adoption and maintenance.
 Following REST principles creates APIs that are intuitive, maintainable, and scalable.',
     'Learn the fundamental principles of RESTful API design to build scalable and maintainable web services.',
     'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-08 10:00:00',
     true,
@@ -657,7 +682,7 @@ Following REST principles creates APIs that are intuitive, maintainable, and sca
 );
 
 -- Post 9: Docker Containerization Guide
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Docker Containerization: A Complete Guide for Developers',
     'docker-containerization-guide',
@@ -683,6 +708,8 @@ Orchestrate multi-container applications with Docker Compose for local developme
 
 For production, consider Kubernetes or Docker Swarm for managing containerized applications.
 
+{{content_image}}
+
 ## Best Practices
 
 - Keep containers stateless when possible
@@ -695,6 +722,7 @@ For production, consider Kubernetes or Docker Swarm for managing containerized a
 Docker simplifies deployment and ensures consistency from development to production.',
     'Master Docker containerization to streamline your development workflow and deployment process.',
     'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800',
+    'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-12 09:00:00',
     true,
@@ -707,7 +735,7 @@ Docker simplifies deployment and ensures consistency from development to product
 );
 
 -- Post 10: Testing Strategies for Modern Applications
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Testing Strategies for Modern Applications: Unit, Integration, and E2E',
     'testing-strategies-modern-applications',
@@ -740,6 +768,8 @@ TDD encourages writing tests before implementation, leading to better design.
 
 Learn when and how to mock dependencies effectively.
 
+{{content_image}}
+
 ## Continuous Integration
 
 Automate testing in your CI/CD pipeline to catch issues early.
@@ -749,6 +779,7 @@ Automate testing in your CI/CD pipeline to catch issues early.
 A well-planned testing strategy saves time and reduces bugs in production.',
     'Discover effective testing strategies to ensure your applications are reliable and maintainable.',
     'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-15 11:00:00',
     true,
@@ -761,7 +792,7 @@ A well-planned testing strategy saves time and reduces bugs in production.',
 );
 
 -- Post 11: Performance Optimization Techniques
-INSERT INTO posts (title, slug, content, excerpt, cover_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
+INSERT INTO posts (title, slug, content, excerpt, cover_image, content_image, author_id, published_at, is_published, views, likes, comments_count, reading_time, created_at, updated_at)
 VALUES (
     'Web Performance Optimization: Techniques for Faster Applications',
     'web-performance-optimization',
@@ -796,6 +827,8 @@ Implement effective browser and CDN caching.
 
 Track Core Web Vitals and other performance metrics to identify bottlenecks.
 
+{{content_image}}
+
 ## Tools and Techniques
 
 - Lighthouse for performance auditing
@@ -807,6 +840,7 @@ Track Core Web Vitals and other performance metrics to identify bottlenecks.
 Continuous performance monitoring and optimization should be part of your development workflow.',
     'Learn essential techniques to optimize web application performance and improve user experience.',
     'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
     (SELECT id FROM authors WHERE username = 'iabdinur'),
     '2026-01-18 13:00:00',
     true,

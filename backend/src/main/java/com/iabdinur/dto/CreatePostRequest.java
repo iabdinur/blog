@@ -21,6 +21,7 @@ public record CreatePostRequest(
     String excerpt,
     
     String coverImage,
+    String contentImage,
     String authorId,
     List<String> tagIds,
     Boolean isPublished,

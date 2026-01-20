@@ -44,6 +44,7 @@ CREATE TABLE posts
     content         TEXT NOT NULL,
     excerpt         TEXT,
     cover_image     TEXT,
+    content_image   TEXT,
     author_id       BIGINT NOT NULL,
     published_at    TIMESTAMP WITHOUT TIME ZONE,
     scheduled_at    TIMESTAMP WITHOUT TIME ZONE,

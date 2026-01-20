@@ -25,6 +25,7 @@ class PostRowMapperTest {
         String content = FAKER.lorem().paragraph();
         String excerpt = FAKER.lorem().sentence();
         String coverImage = FAKER.internet().image();
+        String contentImage = FAKER.internet().image();
         LocalDateTime publishedAt = FAKER.date().past(30, TimeUnit.DAYS).toInstant()
                 .atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
         boolean isPublished = FAKER.bool().bool();
@@ -44,6 +45,7 @@ class PostRowMapperTest {
         post.setContent(content);
         post.setExcerpt(excerpt);
         post.setCoverImage(coverImage);
+        post.setContentImage(contentImage);
         post.setPublishedAt(publishedAt);
         post.setIsPublished(isPublished);
         post.setViews(views);
@@ -65,6 +67,7 @@ class PostRowMapperTest {
         String expectedContent = post.getContent();
         String expectedExcerpt = post.getExcerpt();
         String expectedCoverImage = post.getCoverImage();
+        String expectedContentImage = post.getContentImage();
         LocalDateTime expectedPublishedAt = post.getPublishedAt();
         Boolean expectedIsPublished = post.getIsPublished();
         Long expectedViews = post.getViews();
@@ -83,6 +86,7 @@ class PostRowMapperTest {
         when(resultSet.getString("content")).thenReturn(expectedContent);
         when(resultSet.getString("excerpt")).thenReturn(expectedExcerpt);
         when(resultSet.getString("cover_image")).thenReturn(expectedCoverImage);
+        when(resultSet.getString("content_image")).thenReturn(expectedContentImage);
         when(resultSet.getTimestamp("published_at")).thenReturn(Timestamp.valueOf(expectedPublishedAt));
         when(resultSet.getBoolean("is_published")).thenReturn(expectedIsPublished);
         when(resultSet.getLong("views")).thenReturn(expectedViews);
@@ -103,6 +107,7 @@ class PostRowMapperTest {
         assertThat(actual.getContent()).isEqualTo(expectedContent);
         assertThat(actual.getExcerpt()).isEqualTo(expectedExcerpt);
         assertThat(actual.getCoverImage()).isEqualTo(expectedCoverImage);
+        assertThat(actual.getContentImage()).isEqualTo(expectedContentImage);
         assertThat(actual.getPublishedAt()).isEqualTo(expectedPublishedAt);
         assertThat(actual.getIsPublished()).isEqualTo(expectedIsPublished);
         assertThat(actual.getViews()).isEqualTo(expectedViews);
@@ -126,6 +131,7 @@ class PostRowMapperTest {
         when(resultSet.getString("content")).thenReturn(post.getContent());
         when(resultSet.getString("excerpt")).thenReturn(post.getExcerpt());
         when(resultSet.getString("cover_image")).thenReturn(post.getCoverImage());
+        when(resultSet.getString("content_image")).thenReturn(post.getContentImage());
         when(resultSet.getTimestamp("published_at")).thenReturn(null);
         when(resultSet.getBoolean("is_published")).thenReturn(post.getIsPublished());
         when(resultSet.getLong("views")).thenReturn(post.getViews());
@@ -156,6 +162,7 @@ class PostRowMapperTest {
         when(resultSet.getString("content")).thenReturn(post.getContent());
         when(resultSet.getString("excerpt")).thenReturn(post.getExcerpt());
         when(resultSet.getString("cover_image")).thenReturn(post.getCoverImage());
+        when(resultSet.getString("content_image")).thenReturn(post.getContentImage());
         when(resultSet.getTimestamp("published_at")).thenReturn(Timestamp.valueOf(post.getPublishedAt()));
         when(resultSet.getBoolean("is_published")).thenReturn(post.getIsPublished());
         when(resultSet.getLong("views")).thenReturn(post.getViews());

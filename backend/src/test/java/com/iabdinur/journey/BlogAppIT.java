@@ -53,6 +53,9 @@ class BlogAppIT extends AbstractTestcontainers {
     private com.iabdinur.service.UserService userService;
 
     @Autowired
+    private com.iabdinur.service.AuthorService authorService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -237,6 +240,7 @@ class BlogAppIT extends AbstractTestcontainers {
                 postContent,
                 postExcerpt,
                 postCoverImage,
+                null, // contentImage
                 createdAuthor.id().toString(),
                 List.of(createdTag.id().toString()),
                 true, // isPublished
@@ -443,6 +447,7 @@ class BlogAppIT extends AbstractTestcontainers {
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
                 FAKER.internet().avatar(),
+                null, // contentImage
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
@@ -480,6 +485,7 @@ class BlogAppIT extends AbstractTestcontainers {
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
                 FAKER.internet().avatar(),
+                null, // contentImage
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
@@ -654,6 +660,7 @@ class BlogAppIT extends AbstractTestcontainers {
                 postContent,
                 postExcerpt,
                 postCoverImage,
+                null, // contentImage
                 createdAuthor.id().toString(),
                 List.of(updatedTag.id().toString()),
                 true, // isPublished
@@ -695,6 +702,7 @@ class BlogAppIT extends AbstractTestcontainers {
                 updatedPostContent,
                 updatedPostExcerpt,
                 postCoverImage,
+                null, // contentImage
                 createdAuthor.id().toString(),
                 List.of(updatedTag.id().toString()),
                 true,
@@ -739,5 +747,442 @@ class BlogAppIT extends AbstractTestcontainers {
         // Verify author is deleted
         mockMvc.perform(get("/api/v1/authors/{idOrUsername}", authorUsername))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void itShouldListPostsWithPaginationAndFiltering() throws Exception {
+        // Given - Create multiple posts with unique slugs
+        Author author = createTestAuthor();
+        Tag tag1 = createTestTag();
+        Tag tag2 = createTestTag();
+        
+        // Ensure unique slugs by adding timestamp
+        long timestamp = System.currentTimeMillis();
+        String postSlug1 = String.join("-", FAKER.lorem().words(3)).toLowerCase() + "-" + timestamp + "-1";
+        String postSlug2 = String.join("-", FAKER.lorem().words(3)).toLowerCase() + "-" + timestamp + "-2";
+        String postSlug3 = String.join("-", FAKER.lorem().words(3)).toLowerCase() + "-" + timestamp + "-3";
+        
+        CreatePostRequest post1 = new CreatePostRequest(
+                FAKER.lorem().sentence(),
+                postSlug1,
+                FAKER.lorem().paragraph(),
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag1.getId().toString()),
+                true, // isPublished
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        CreatePostRequest post2 = new CreatePostRequest(
+                FAKER.lorem().sentence(),
+                postSlug2,
+                FAKER.lorem().paragraph(),
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag1.getId().toString(), tag2.getId().toString()),
+                true, // isPublished
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        CreatePostRequest post3 = new CreatePostRequest(
+                FAKER.lorem().sentence(),
+                postSlug3,
+                FAKER.lorem().paragraph(),
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag2.getId().toString()),
+                true, // isPublished
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        String post1ResponseJson = mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(post1)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        PostDTO createdPost1 = objectMapper.readValue(post1ResponseJson, PostDTO.class);
+        
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(post2)))
+                .andExpect(status().isCreated());
+        
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(post3)))
+                .andExpect(status().isCreated());
+        
+        // When - Get all posts
+        String allPostsJson = mockMvc.perform(get("/api/v1/posts")
+                        .param("page", "1")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts").isArray())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Then - Verify posts are returned
+        PostListResponse response = objectMapper.readValue(allPostsJson, PostListResponse.class);
+        assertThat(response.posts().size()).isGreaterThanOrEqualTo(3);
+        
+        // When - Filter by tag
+        String filteredPostsJson = mockMvc.perform(get("/api/v1/posts")
+                        .param("tag", tag1.getSlug())
+                        .param("page", "1")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        PostListResponse filteredResponse = objectMapper.readValue(filteredPostsJson, PostListResponse.class);
+        assertThat(filteredResponse.posts().size()).isGreaterThanOrEqualTo(2);
+        
+        // When - Filter by author (author parameter expects username, not ID)
+        String authorPostsJson = mockMvc.perform(get("/api/v1/posts")
+                        .param("author", author.getUsername())
+                        .param("page", "1")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        PostListResponse authorResponse = objectMapper.readValue(authorPostsJson, PostListResponse.class);
+        assertThat(authorResponse.posts().size()).isGreaterThanOrEqualTo(3);
+        
+        // When - Exclude a post (exclude expects post IDs, not slugs)
+        String excludedPostsJson = mockMvc.perform(get("/api/v1/posts")
+                        .param("exclude", createdPost1.id().toString())
+                        .param("page", "1")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        PostListResponse excludedResponse = objectMapper.readValue(excludedPostsJson, PostListResponse.class);
+        boolean containsExcluded = excludedResponse.posts().stream()
+                .anyMatch(p -> p.id().equals(createdPost1.id()));
+        assertThat(containsExcluded).isFalse();
+    }
+
+    @Test
+    void itShouldHandleDraftPosts() throws Exception {
+        // Given - Create user, login, and ensure author exists
+        TestUser testUser = createTestUser();
+        com.iabdinur.dto.AuthenticationRequest authRequest = new com.iabdinur.dto.AuthenticationRequest(
+                testUser.user.getEmail(), testUser.plainPassword);
+        
+        String loginResponseJson = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(authRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        com.iabdinur.dto.AuthenticationResponse authResponse = objectMapper.readValue(loginResponseJson, com.iabdinur.dto.AuthenticationResponse.class);
+        String authToken = authResponse.token();
+        
+        // Create author with same email as user (so findOrCreateAuthorForUser finds it)
+        String authorName = testUser.user.getName();
+        String authorUsername = testUser.user.getEmail().split("@")[0];
+        Author author = new Author(authorName, authorUsername, testUser.user.getEmail());
+        authorDao.insertAuthor(author);
+        author = authorDao.selectAllAuthors().stream()
+                .filter(a -> a.getEmail().equals(testUser.user.getEmail()))
+                .findFirst()
+                .orElseThrow();
+        
+        // Create draft post
+        Tag tag = createTestTag();
+        String draftSlug = String.join("-", FAKER.lorem().words(3)).toLowerCase();
+        
+        CreatePostRequest draftPost = new CreatePostRequest(
+                FAKER.lorem().sentence(),
+                draftSlug,
+                FAKER.lorem().paragraph(),
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag.getId().toString()),
+                false, // isPublished = false (draft)
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(draftPost)))
+                .andExpect(status().isCreated());
+        
+        // When - Get drafts (requires authentication)
+        String draftsJson = mockMvc.perform(get("/api/v1/posts/drafts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts").isArray())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Then - Verify draft is in the list
+        PostListResponse draftsResponse = objectMapper.readValue(draftsJson, PostListResponse.class);
+        assertThat(draftsResponse.posts()).isNotEmpty();
+        boolean containsDraft = draftsResponse.posts().stream()
+                .anyMatch(p -> p.slug().equals(draftSlug));
+        assertThat(containsDraft).isTrue();
+        
+        // When - Publish draft (requires authentication)
+        mockMvc.perform(post("/api/v1/posts/{slug}/publish", draftSlug)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken))
+                .andExpect(status().isOk());
+        
+        // Then - Verify draft is no longer in drafts list
+        String draftsAfterPublishJson = mockMvc.perform(get("/api/v1/posts/drafts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        PostListResponse draftsAfterPublish = objectMapper.readValue(draftsAfterPublishJson, PostListResponse.class);
+        boolean stillContainsDraft = draftsAfterPublish.posts().stream()
+                .anyMatch(p -> p.slug().equals(draftSlug));
+        assertThat(stillContainsDraft).isFalse();
+    }
+
+    @Test
+    void itShouldListAllAuthors() throws Exception {
+        // Given - Create multiple authors
+        Author author1 = createTestAuthor();
+        Author author2 = createTestAuthor();
+        
+        // When - Get all authors
+        String authorsJson = mockMvc.perform(get("/api/v1/authors"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Then - Verify authors are returned
+        List<AuthorDTO> authors = objectMapper.readValue(authorsJson,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, AuthorDTO.class));
+        assertThat(authors.size()).isGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void itShouldListAllTags() throws Exception {
+        // Given - Create multiple tags
+        Tag tag1 = createTestTag();
+        Tag tag2 = createTestTag();
+        
+        // When - Get all tags
+        String tagsJson = mockMvc.perform(get("/api/v1/tags"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Then - Verify tags are returned
+        List<TagDTO> tags = objectMapper.readValue(tagsJson,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, TagDTO.class));
+        assertThat(tags.size()).isGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void itShouldUpdateAndDeleteComment() throws Exception {
+        // Given - Create user and login
+        TestUser testUser = createTestUser();
+        com.iabdinur.dto.AuthenticationRequest authRequest = new com.iabdinur.dto.AuthenticationRequest(
+                testUser.user.getEmail(), testUser.plainPassword);
+        
+        String loginResponseJson = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(authRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        com.iabdinur.dto.AuthenticationResponse authResponse = objectMapper.readValue(loginResponseJson, com.iabdinur.dto.AuthenticationResponse.class);
+        String authToken = authResponse.token();
+        
+        // Create author with same email as user (so findOrCreateAuthorForUser finds it)
+        // Use authorService to ensure it's properly committed and visible
+        String authorName = testUser.user.getName();
+        String authorUsername = testUser.user.getEmail().split("@")[0];
+        // Ensure unique username
+        int counter = 1;
+        String uniqueUsername = authorUsername;
+        while (authorDao.selectAuthorByUsername(uniqueUsername).isPresent()) {
+            uniqueUsername = authorUsername + counter;
+            counter++;
+        }
+        
+        com.iabdinur.dto.CreateAuthorRequest createAuthorRequest = new com.iabdinur.dto.CreateAuthorRequest(
+                authorName,
+                uniqueUsername,
+                testUser.user.getEmail(),
+                "",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        
+        com.iabdinur.dto.AuthorDTO authorDTO = authorService.createAuthor(createAuthorRequest);
+        Author author = authorDao.selectAuthorById(Long.parseLong(authorDTO.id())).orElseThrow();
+        
+        // Verify author was created with correct email
+        assertThat(author.getEmail()).isEqualTo(testUser.user.getEmail());
+        
+        // Create post and comment
+        Tag tag = createTestTag();
+        String postSlug = String.join("-", FAKER.lorem().words(3)).toLowerCase();
+        
+        CreatePostRequest createPostRequest = new CreatePostRequest(
+                FAKER.lorem().sentence(),
+                postSlug,
+                FAKER.lorem().paragraph(),
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag.getId().toString()),
+                true,
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createPostRequest)))
+                .andExpect(status().isCreated());
+        
+        String commentContent = FAKER.lorem().paragraph();
+        record CreateCommentRequest(String content, String parentId) {}
+        CreateCommentRequest createCommentRequest = new CreateCommentRequest(commentContent, null);
+        
+        String commentResponseJson = mockMvc.perform(post("/api/v1/posts/{slug}/comments", postSlug)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createCommentRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        CommentDTO createdComment = objectMapper.readValue(commentResponseJson, CommentDTO.class);
+        
+        // Verify the comment author matches (findOrCreateAuthorForUser should find the author we created)
+        assertThat(createdComment.author()).isNotNull();
+        assertThat(createdComment.author().email()).isEqualTo(testUser.user.getEmail());
+        
+        // Verify the author ID matches - this ensures findOrCreateAuthorForUser found our author
+        assertThat(createdComment.author().id()).isEqualTo(authorDTO.id());
+        
+        // When - Update comment
+        String updatedContent = FAKER.lorem().paragraph();
+        com.iabdinur.dto.UpdateCommentRequest updateRequest = new com.iabdinur.dto.UpdateCommentRequest(updatedContent);
+        
+        String updatedCommentJson = mockMvc.perform(put("/api/v1/posts/{slug}/comments/{commentId}", postSlug, createdComment.id().toString())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        CommentDTO updatedComment = objectMapper.readValue(updatedCommentJson, CommentDTO.class);
+        assertThat(updatedComment.content()).isEqualTo(updatedContent);
+        
+        // When - Delete comment
+        mockMvc.perform(delete("/api/v1/posts/{slug}/comments/{commentId}", postSlug, createdComment.id().toString())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken))
+                .andExpect(status().isOk());
+        
+        // Then - Verify comment is deleted
+        String commentsAfterDeleteJson = mockMvc.perform(get("/api/v1/posts/{slug}/comments", postSlug))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        List<CommentDTO> commentsAfterDelete = objectMapper.readValue(commentsAfterDeleteJson,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, CommentDTO.class));
+        boolean stillContainsComment = commentsAfterDelete.stream()
+                .anyMatch(c -> c.id().equals(createdComment.id()));
+        assertThat(stillContainsComment).isFalse();
+    }
+
+    @Test
+    void itShouldSearchPosts() throws Exception {
+        // Given - Create post with specific content
+        Author author = createTestAuthor();
+        Tag tag = createTestTag();
+        String postSlug = String.join("-", FAKER.lorem().words(3)).toLowerCase();
+        String searchableTitle = "UniqueSearchTerm" + FAKER.random().nextInt(1000, 9999);
+        String searchableContent = "UniqueSearchTerm content " + FAKER.lorem().paragraph();
+        
+        CreatePostRequest createPostRequest = new CreatePostRequest(
+                searchableTitle,
+                postSlug,
+                searchableContent,
+                FAKER.lorem().sentence(),
+                FAKER.internet().image(),
+                null,
+                author.getId().toString(),
+                List.of(tag.getId().toString()),
+                true, // Must be published for search to find it
+                FAKER.random().nextInt(5, 30),
+                null
+        );
+        
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createPostRequest)))
+                .andExpect(status().isCreated());
+        
+        // When - Search for post (use "query" parameter, not "q")
+        String searchResultsJson = mockMvc.perform(get("/api/v1/search")
+                        .param("query", "UniqueSearchTerm"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Then - Verify search returns results
+        com.iabdinur.dto.SearchResponse searchResponse = objectMapper.readValue(searchResultsJson, com.iabdinur.dto.SearchResponse.class);
+        assertThat(searchResponse.posts()).isNotEmpty();
+        boolean containsSearchedPost = searchResponse.posts().stream()
+                .anyMatch(p -> p.title().contains("UniqueSearchTerm") || p.content().contains("UniqueSearchTerm"));
+        assertThat(containsSearchedPost).isTrue();
+    }
+
+    @Test
+    void itShouldReturnHealthCheck() throws Exception {
+        // When & Then - Health check should return OK
+        mockMvc.perform(get("/api/v1/health"))
+                .andExpect(status().isOk());
     }
 }

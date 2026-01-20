@@ -10,6 +10,7 @@ public record PostDTO(
     String content,
     String excerpt,
     String coverImage,
+    String contentImage,
     String publishedAt,
     String scheduledAt,
     String updatedAt,

@@ -98,7 +98,7 @@ class PostServiceTest {
         when(jdbcTemplate.query(anyString(), isA(org.springframework.jdbc.core.RowMapper.class), anyLong())).thenReturn(new ArrayList<>());
 
         // When
-        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, null);
+        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, null, null);
 
         // Then
         verify(postDao).selectPublishedPosts(10, 0);
@@ -115,7 +115,7 @@ class PostServiceTest {
         when(postDao.countPostsByTagSlug(tagSlug)).thenReturn(0L);
 
         // When
-        PostListResponse result = underTest.getAllPosts("latest", 1, 10, tagSlug, null);
+        PostListResponse result = underTest.getAllPosts("latest", 1, 10, tagSlug, null, null);
 
         // Then
         verify(postDao).selectPostsByTagSlug(tagSlug, 10, 0);
@@ -133,7 +133,7 @@ class PostServiceTest {
         when(postDao.countPostsByAuthorId(author.getId())).thenReturn(0L);
 
         // When
-        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, author.getUsername());
+        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, author.getUsername(), null);
 
         // Then
         verify(authorDao).selectAuthorByUsername(author.getUsername());
@@ -147,7 +147,7 @@ class PostServiceTest {
         when(authorDao.selectAuthorByUsername(username)).thenReturn(Optional.empty());
 
         // When
-        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, username);
+        PostListResponse result = underTest.getAllPosts("latest", 1, 10, null, username, null);
 
         // Then
         verify(authorDao).selectAuthorByUsername(username);
@@ -218,7 +218,8 @@ class PostServiceTest {
                 String.join("-", FAKER.lorem().words(3)).toLowerCase(),
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                null,
+                null, // coverImage
+                null, // contentImage
                 author.getId().toString(),
                 List.of(tag.getId().toString()),
                 true,
@@ -263,7 +264,8 @@ class PostServiceTest {
                 String.join("-", FAKER.lorem().words(3)).toLowerCase(),
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                null,
+                null, // coverImage
+                null, // contentImage
                 authorId.toString(),
                 new ArrayList<>(),
                 true,
@@ -293,7 +295,8 @@ class PostServiceTest {
                 post.getSlug(),
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                null,
+                null, // coverImage
+                null, // contentImage
                 "1",
                 new ArrayList<>(),
                 true,
@@ -326,7 +329,8 @@ class PostServiceTest {
                 slug,
                 FAKER.lorem().paragraph(),
                 FAKER.lorem().sentence(),
-                null,
+                null, // coverImage
+                null, // contentImage
                 "1",
                 new ArrayList<>(),
                 true,
@@ -435,5 +439,54 @@ class PostServiceTest {
         verify(postDao).selectPostBySlug(post.getSlug());
         assertThat(result).isPresent();
         assertThat(result.get().isPublished()).isFalse();
+    }
+
+    @Test
+    void itShouldReplaceContentImagePlaceholder() {
+        // Given
+        Post post = createTestPost();
+        Author author = createTestAuthor();
+        post.setAuthor(author);
+        String contentWithPlaceholder = "Some content {{content_image}} more content";
+        String contentImageUrl = FAKER.internet().image();
+        post.setContent(contentWithPlaceholder);
+        post.setContentImage(contentImageUrl);
+        
+        when(postDao.selectPublishedPostBySlug(post.getSlug())).thenReturn(Optional.of(post));
+        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), anyLong())).thenReturn(author.getId());
+        when(jdbcTemplate.query(anyString(), isA(org.springframework.jdbc.core.RowMapper.class), anyLong())).thenReturn(new ArrayList<>());
+
+        // When
+        Optional<PostDTO> result = underTest.getPostBySlug(post.getSlug());
+
+        // Then
+        assertThat(result).isPresent();
+        String processedContent = result.get().content();
+        assertThat(processedContent).contains("![Content Image](" + contentImageUrl + ")");
+        assertThat(processedContent).doesNotContain("{{content_image}}");
+    }
+
+    @Test
+    void itShouldNotReplacePlaceholderWhenContentImageIsNull() {
+        // Given
+        Post post = createTestPost();
+        Author author = createTestAuthor();
+        post.setAuthor(author);
+        String contentWithPlaceholder = "Some content {{content_image}} more content";
+        post.setContent(contentWithPlaceholder);
+        post.setContentImage(null);
+        
+        when(postDao.selectPublishedPostBySlug(post.getSlug())).thenReturn(Optional.of(post));
+        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), anyLong())).thenReturn(author.getId());
+        when(jdbcTemplate.query(anyString(), isA(org.springframework.jdbc.core.RowMapper.class), anyLong())).thenReturn(new ArrayList<>());
+
+        // When
+        Optional<PostDTO> result = underTest.getPostBySlug(post.getSlug());
+
+        // Then
+        assertThat(result).isPresent();
+        String processedContent = result.get().content();
+        assertThat(processedContent).contains("{{content_image}}");
+        assertThat(processedContent).doesNotContain("![Content Image]");
     }
 }

@@ -33,8 +33,9 @@ public class PostController {
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer limit,
             @RequestParam(required = false) String tag,
-            @RequestParam(required = false) String author) {
-        PostListResponse response = postService.getAllPosts(sort, page, limit, tag, author);
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String exclude) {
+        PostListResponse response = postService.getAllPosts(sort, page, limit, tag, author, exclude);
         return ResponseEntity.ok(response);
     }
 

@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/users")
+@RequestMapping("/api/v1/users")
 public class UserController {
     
     private final UserService userService;
@@ -65,7 +65,7 @@ public class UserController {
                 .body(createdUser);
     }
 
-    @GetMapping("{email}")
+    @GetMapping("/{email}")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable("email") String email) {
         return userService.findByEmail(email)
             .map(ResponseEntity::ok)
@@ -73,7 +73,7 @@ public class UserController {
     }
 
     @PostMapping(
-            value = "{email}/profile-image",
+            value = "/{email}/profile-image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public void uploadUserProfileImage(
@@ -83,14 +83,20 @@ public class UserController {
     }
 
     @GetMapping(
-            value = "{email}/profile-image",
+            value = "/{email}/profile-image",
             produces = MediaType.IMAGE_JPEG_VALUE
     )
     public byte[] getUserProfileImage(@PathVariable("email") String email) {
         return userService.getUserProfileImage(email);
     }
 
-    @PutMapping("{email}")
+    @DeleteMapping("/{email}/profile-image")
+    public ResponseEntity<Void> deleteUserProfileImage(@PathVariable("email") String email) {
+        userService.deleteUserProfileImage(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{email}")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable("email") String email,
             @RequestBody com.iabdinur.dto.UpdateUserRequest request) {
@@ -99,7 +105,7 @@ public class UserController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("{email}/password")
+    @PutMapping("/{email}/password")
     public ResponseEntity<Void> changePassword(
             @PathVariable("email") String email,
             @Valid @RequestBody com.iabdinur.dto.ChangePasswordRequest request) {

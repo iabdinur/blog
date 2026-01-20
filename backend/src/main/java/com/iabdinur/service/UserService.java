@@ -269,6 +269,31 @@ public class UserService {
     }
 
     @Transactional
+    public void deleteUserProfileImage(String email) {
+        if (s3Service == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, 
+                "S3 service is not configured. Please provide AWS credentials.");
+        }
+
+        User user = userDao.selectUserByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        if (user.getProfileImageId() != null && !user.getProfileImageId().isEmpty()) {
+            try {
+                // Delete from S3
+                s3Service.deleteObject(user.getProfileImageId());
+            } catch (Exception e) {
+                // Log error but continue to remove reference from database
+                // In case S3 deletion fails, we still want to remove the reference
+            }
+            
+            // Remove reference from database
+            user.setProfileImageId(null);
+            userDao.updateUser(user);
+        }
+    }
+
+    @Transactional
     public Optional<UserDTO> updateUser(String email, UpdateUserRequest request) {
         Optional<User> userOpt = userDao.selectUserByEmail(email);
         if (userOpt.isEmpty()) {

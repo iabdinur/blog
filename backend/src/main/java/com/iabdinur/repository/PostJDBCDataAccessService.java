@@ -30,7 +30,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectAllPosts() {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -43,7 +43,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectPublishedPosts(int limit, int offset) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -57,7 +57,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectPostsByAuthorId(Long authorId, int limit, int offset) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -71,7 +71,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectPostsByTagSlug(String tagSlug, int limit, int offset) {
         var sql = """
-                SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image,
+                SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image, p.content_image,
                        p.author_id, p.published_at, p.scheduled_at, p.is_published, p.views, p.likes,
                        p.comments_count, p.reading_time,
                        p.created_at, p.updated_at
@@ -88,7 +88,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public Optional<Post> selectPostById(Long postId) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -102,7 +102,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public Optional<Post> selectPostBySlug(String slug) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -116,7 +116,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public Optional<Post> selectPublishedPostBySlug(String slug) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -130,10 +130,10 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public void insertPost(Post post) {
         var sql = """
-                INSERT INTO posts(title, slug, content, excerpt, cover_image, author_id, published_at,
+                INSERT INTO posts(title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                                  scheduled_at, is_published, views, likes, comments_count, reading_time,
                                  created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -143,16 +143,17 @@ public class PostJDBCDataAccessService implements PostDao {
             ps.setString(3, post.getContent());
             ps.setString(4, post.getExcerpt());
             ps.setString(5, post.getCoverImage());
-            ps.setLong(6, post.getAuthor().getId());
-            ps.setTimestamp(7, post.getPublishedAt() != null ? Timestamp.valueOf(post.getPublishedAt()) : null);
-            ps.setTimestamp(8, post.getScheduledAt() != null ? Timestamp.valueOf(post.getScheduledAt()) : null);
-            ps.setBoolean(9, post.getIsPublished() != null ? post.getIsPublished() : false);
-            ps.setLong(10, post.getViews() != null ? post.getViews() : 0L);
-            ps.setLong(11, post.getLikes() != null ? post.getLikes() : 0L);
-            ps.setInt(12, post.getCommentsCount() != null ? post.getCommentsCount() : 0);
-            ps.setObject(13, post.getReadingTime());
-            ps.setTimestamp(14, Timestamp.valueOf(post.getCreatedAt()));
-            ps.setTimestamp(15, Timestamp.valueOf(post.getUpdatedAt()));
+            ps.setString(6, post.getContentImage());
+            ps.setLong(7, post.getAuthor().getId());
+            ps.setTimestamp(8, post.getPublishedAt() != null ? Timestamp.valueOf(post.getPublishedAt()) : null);
+            ps.setTimestamp(9, post.getScheduledAt() != null ? Timestamp.valueOf(post.getScheduledAt()) : null);
+            ps.setBoolean(10, post.getIsPublished() != null ? post.getIsPublished() : false);
+            ps.setLong(11, post.getViews() != null ? post.getViews() : 0L);
+            ps.setLong(12, post.getLikes() != null ? post.getLikes() : 0L);
+            ps.setInt(13, post.getCommentsCount() != null ? post.getCommentsCount() : 0);
+            ps.setObject(14, post.getReadingTime());
+            ps.setTimestamp(15, Timestamp.valueOf(post.getCreatedAt()));
+            ps.setTimestamp(16, Timestamp.valueOf(post.getUpdatedAt()));
             return ps;
         }, keyHolder);
         
@@ -219,6 +220,20 @@ public class PostJDBCDataAccessService implements PostDao {
             String sql = "UPDATE posts SET excerpt = ?, updated_at = ? WHERE id = ?";
             jdbcTemplate.update(sql,
                     update.getExcerpt(),
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    update.getId());
+        }
+        if (update.getCoverImage() != null) {
+            String sql = "UPDATE posts SET cover_image = ?, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                    update.getCoverImage(),
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    update.getId());
+        }
+        if (update.getContentImage() != null) {
+            String sql = "UPDATE posts SET content_image = ?, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                    update.getContentImage(),
                     Timestamp.valueOf(LocalDateTime.now()),
                     update.getId());
         }
@@ -331,7 +346,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectDraftsByAuthorId(Long authorId, int limit, int offset) {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts
@@ -356,7 +371,7 @@ public class PostJDBCDataAccessService implements PostDao {
     @Override
     public List<Post> selectScheduledPostsReadyToPublish() {
         var sql = """
-                SELECT id, title, slug, content, excerpt, cover_image, author_id, published_at,
+                SELECT id, title, slug, content, excerpt, cover_image, content_image, author_id, published_at,
                        scheduled_at, is_published, views, likes, comments_count, reading_time,
                        created_at, updated_at
                 FROM posts

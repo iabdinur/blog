@@ -20,6 +20,7 @@ public class PostRowMapper implements RowMapper<Post> {
         post.setContent(rs.getString("content"));
         post.setExcerpt(rs.getString("excerpt"));
         post.setCoverImage(rs.getString("cover_image"));
+        post.setContentImage(rs.getString("content_image"));
         
         Timestamp publishedAt = rs.getTimestamp("published_at");
         if (publishedAt != null) {

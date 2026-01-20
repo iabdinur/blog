@@ -57,6 +57,7 @@ class PostJDBCDataAccessServiceTest extends AbstractTestcontainers {
         String content = FAKER.lorem().paragraph();
         String excerpt = FAKER.lorem().sentence();
         String coverImage = FAKER.internet().image();
+        String contentImage = FAKER.internet().image();
         LocalDateTime publishedAt = FAKER.date().past(30, TimeUnit.DAYS)
                 .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
         boolean isPublished = FAKER.bool().bool();
@@ -72,6 +73,7 @@ class PostJDBCDataAccessServiceTest extends AbstractTestcontainers {
         Post post = new Post(title, slug, content, author);
         post.setExcerpt(excerpt);
         post.setCoverImage(coverImage);
+        post.setContentImage(contentImage);
         post.setPublishedAt(publishedAt);
         post.setIsPublished(isPublished);
         post.setViews(views);

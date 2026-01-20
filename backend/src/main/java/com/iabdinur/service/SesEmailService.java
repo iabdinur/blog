@@ -6,6 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templatemode.TemplateMode;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -14,6 +19,7 @@ import software.amazon.awssdk.services.ses.model.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class SesEmailService implements EmailService {
@@ -28,6 +34,7 @@ public class SesEmailService implements EmailService {
     private final SentEmailDao sentEmailDao;
     
     private SesClient sesClient;
+    private TemplateEngine templateEngine;
     
     public SesEmailService(
             @Value("${app.email.from:noreply@iabdinur.com}") String fromEmail,
@@ -46,6 +53,9 @@ public class SesEmailService implements EmailService {
     
     @PostConstruct
     public void init() {
+        // Initialize Thymeleaf template engine
+        this.templateEngine = initializeTemplateEngine();
+        
         if (enabled && !awsAccessKeyId.isEmpty() && !awsSecretAccessKey.isEmpty()) {
             try {
                 AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
@@ -68,6 +78,19 @@ public class SesEmailService implements EmailService {
                        "Emails will be logged to console only.");
             this.sesClient = null;
         }
+    }
+    
+    private TemplateEngine initializeTemplateEngine() {
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix("templates/email/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        templateResolver.setCacheable(false); // Set to true in production for better performance
+        
+        SpringTemplateEngine engine = new SpringTemplateEngine();
+        engine.setTemplateResolver(templateResolver);
+        return engine;
     }
     
     @PreDestroy
@@ -140,36 +163,16 @@ public class SesEmailService implements EmailService {
     }
     
     private String buildVerificationEmailBody(String code, int expiresInMinutes) {
-        return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Verification Code</title>
-            </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px;">
-                    <h1 style="color: #2c3e50; margin-top: 0;">Verification Code</h1>
-                    <p>Hello,</p>
-                    <p>You requested a verification code to access your account. Please use the code below:</p>
-                    <div style="background-color: #ffffff; border: 2px dashed #3498db; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
-                        <h2 style="color: #3498db; margin: 0; font-size: 32px; letter-spacing: 5px;">%s</h2>
-                    </div>
-                    <p><strong>This code will expire in %d minutes.</strong></p>
-                    <p>If you didn't request this code, please ignore this email.</p>
-                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p style="color: #7f8c8d; font-size: 12px;">This is an automated message. Please do not reply to this email.</p>
-                </div>
-            </body>
-            </html>
-            """.formatted(code, expiresInMinutes);
+        Context context = new Context();
+        context.setVariable("code", code);
+        context.setVariable("expiresInMinutes", expiresInMinutes);
+        
+        return templateEngine.process("verification", context);
     }
     
     @Override
     public void sendPostNotification(String to, String postTitle, String postSlug, String postExcerpt) {
         String subject = "New Post: " + postTitle;
-        String body = buildPostNotificationEmailBody(postTitle, postSlug, postExcerpt);
         
         // Get base URL from environment or use default
         String baseUrl = System.getenv("APP_BASE_URL");
@@ -177,6 +180,9 @@ public class SesEmailService implements EmailService {
             baseUrl = "http://localhost:5173"; // Default for development
         }
         String postUrl = baseUrl + "/post/" + postSlug;
+        String unsubscribeUrl = baseUrl + "/newsletter?unsubscribe=true";
+        
+        String body = buildPostNotificationEmailBody(postTitle, postExcerpt, postUrl, unsubscribeUrl);
         
         if (sesClient == null || !enabled) {
             // Fallback to console logging if SES is not configured
@@ -233,47 +239,13 @@ public class SesEmailService implements EmailService {
         }
     }
     
-    private String buildPostNotificationEmailBody(String postTitle, String postSlug, String postExcerpt) {
-        String baseUrl = System.getenv("APP_BASE_URL");
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = "http://localhost:5173";
-        }
-        String postUrl = baseUrl + "/post/" + postSlug;
+    private String buildPostNotificationEmailBody(String postTitle, String postExcerpt, String postUrl, String unsubscribeUrl) {
+        Context context = new Context();
+        context.setVariable("postTitle", postTitle);
+        context.setVariable("postExcerpt", postExcerpt != null ? postExcerpt : "");
+        context.setVariable("postUrl", postUrl);
+        context.setVariable("unsubscribeUrl", unsubscribeUrl);
         
-        return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>New Post: %s</title>
-            </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px;">
-                    <h1 style="color: #2c3e50; margin-top: 0;">New Post Published!</h1>
-                    <h2 style="color: #3498db;">%s</h2>
-                    %s
-                    <div style="margin: 30px 0; text-align: center;">
-                        <a href="%s" style="background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                            Read Full Post
-                        </a>
-                    </div>
-                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p style="color: #7f8c8d; font-size: 12px;">
-                        You're receiving this email because you subscribed to our newsletter.
-                        <a href="%s/newsletter?unsubscribe=true" style="color: #7f8c8d;">Unsubscribe</a>
-                    </p>
-                </div>
-            </body>
-            </html>
-            """.formatted(
-                postTitle,
-                postTitle,
-                postExcerpt != null && !postExcerpt.isEmpty() 
-                    ? "<p style=\"font-size: 16px; color: #555;\">" + postExcerpt + "</p>" 
-                    : "",
-                postUrl,
-                baseUrl
-            );
+        return templateEngine.process("post-notification", context);
     }
 }

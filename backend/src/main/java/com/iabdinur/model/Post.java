@@ -31,6 +31,9 @@ public class Post {
     @Column(name = "cover_image", columnDefinition = "TEXT")
     private String coverImage;
 
+    @Column(name = "content_image", columnDefinition = "TEXT")
+    private String contentImage;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false, foreignKey = @ForeignKey(name = "posts_author_id_fkey"))
     private Author author;
@@ -148,6 +151,14 @@ public class Post {
 
     public void setCoverImage(String coverImage) {
         this.coverImage = coverImage;
+    }
+
+    public String getContentImage() {
+        return contentImage;
+    }
+
+    public void setContentImage(String contentImage) {
+        this.contentImage = contentImage;
     }
 
     public Author getAuthor() {

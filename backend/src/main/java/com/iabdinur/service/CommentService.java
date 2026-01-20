@@ -124,6 +124,9 @@ public class CommentService {
 
         Comment comment = commentOpt.get();
         
+        // Load author before checking ownership
+        loadCommentRelationships(List.of(comment));
+        
         // Verify the author owns this comment
         if (comment.getAuthor() == null || !comment.getAuthor().getId().equals(authorId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own comments");
@@ -133,8 +136,7 @@ public class CommentService {
         comment.setUpdatedAt(java.time.LocalDateTime.now());
         commentDao.updateComment(comment);
 
-        // Load relationships for DTO
-        loadCommentRelationships(List.of(comment));
+        // Reload relationships for DTO (author already loaded)
         return Optional.of(convertToDTO(comment, false));
     }
 
@@ -146,6 +148,9 @@ public class CommentService {
         }
 
         Comment comment = commentOpt.get();
+        
+        // Load author before checking ownership
+        loadCommentRelationships(List.of(comment));
         
         // Verify the author owns this comment
         if (comment.getAuthor() == null || !comment.getAuthor().getId().equals(authorId)) {

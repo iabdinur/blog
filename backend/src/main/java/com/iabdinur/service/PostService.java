@@ -16,15 +16,20 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional(readOnly = true)
 public class PostService {
+    private static final Logger logger = LoggerFactory.getLogger(PostService.class);
+    
     private final PostDao postDao;
     private final AuthorDao authorDao;
     private final TagDao tagDao;
@@ -41,24 +46,27 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostListResponse getAllPosts(String sort, Integer page, Integer limit, String tag, String author) {
+    public PostListResponse getAllPosts(String sort, Integer page, Integer limit, String tag, String author, String exclude) {
         int offset = (page - 1) * limit;
         List<Post> posts;
         long total;
+        
+        // If exclude is provided, fetch more posts to account for exclusions
+        int fetchLimit = (exclude != null && !exclude.isEmpty()) ? limit * 2 : limit;
 
         if (tag != null) {
-            posts = postDao.selectPostsByTagSlug(tag, limit, offset);
+            posts = postDao.selectPostsByTagSlug(tag, fetchLimit, offset);
             total = postDao.countPostsByTagSlug(tag);
         } else if (author != null) {
             Optional<Author> authorOpt = authorDao.selectAuthorByUsername(author);
             if (authorOpt.isEmpty()) {
                 return new PostListResponse(new ArrayList<>(), 0, page, limit);
             }
-            posts = postDao.selectPostsByAuthorId(authorOpt.get().getId(), limit, offset);
+            posts = postDao.selectPostsByAuthorId(authorOpt.get().getId(), fetchLimit, offset);
             total = postDao.countPostsByAuthorId(authorOpt.get().getId());
         } else {
             // Handle sorting manually
-            posts = postDao.selectPublishedPosts(limit, offset);
+            posts = postDao.selectPublishedPosts(fetchLimit, offset);
             total = postDao.countPublishedPosts();
             
             // Apply sorting
@@ -70,6 +78,19 @@ public class PostService {
             // "latest" is default - already sorted by published_at DESC in query
         }
 
+        // Filter out excluded posts if exclude parameter is provided
+        if (exclude != null && !exclude.isEmpty()) {
+            List<Long> excludeIds = parseExcludeIds(exclude);
+            posts = posts.stream()
+                .filter(post -> !excludeIds.contains(post.getId()))
+                .collect(Collectors.toList());
+        }
+
+        // Limit to requested size after filtering
+        if (posts.size() > limit) {
+            posts = posts.subList(0, limit);
+        }
+
         // Load relationships
         loadPostRelationships(posts);
 
@@ -78,6 +99,22 @@ public class PostService {
             .collect(Collectors.toList());
 
         return new PostListResponse(postDTOs, (int) total, page, limit);
+    }
+    
+    private List<Long> parseExcludeIds(String exclude) {
+        if (exclude == null || exclude.isEmpty()) {
+            return new ArrayList<>();
+        }
+        try {
+            return Arrays.stream(exclude.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid exclude parameter format: {}", exclude);
+            return new ArrayList<>();
+        }
     }
 
     @Transactional(readOnly = true)
@@ -97,7 +134,7 @@ public class PostService {
         int offset = (page - 1) * limit;
         
         var sql = """
-                SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image, p.author_id,
+                SELECT DISTINCT p.id, p.title, p.slug, p.content, p.excerpt, p.cover_image, p.content_image, p.author_id,
                        p.published_at, p.scheduled_at, p.is_published, p.views, p.likes, p.comments_count, p.reading_time,
                        p.created_at, p.updated_at
                 FROM posts p
@@ -118,6 +155,7 @@ public class PostService {
                 post.setContent(rs.getString("content"));
                 post.setExcerpt(rs.getString("excerpt"));
                 post.setCoverImage(rs.getString("cover_image"));
+                post.setContentImage(rs.getString("content_image"));
                 if (rs.getTimestamp("published_at") != null) {
                     post.setPublishedAt(rs.getTimestamp("published_at").toLocalDateTime());
                 }
@@ -242,6 +280,7 @@ public class PostService {
         post.setContent(request.content());
         post.setExcerpt(request.excerpt());
         post.setCoverImage(request.coverImage());
+        post.setContentImage(request.contentImage());
         post.setAuthor(author);
         post.setIsPublished(request.isPublished() != null ? request.isPublished() : false);
         post.setViews(0L);
@@ -299,6 +338,7 @@ public class PostService {
         post.setContent(request.content());
         post.setExcerpt(request.excerpt());
         post.setCoverImage(request.coverImage());
+        post.setContentImage(request.contentImage());
         post.setReadingTime(request.readingTime());
         post.setUpdatedAt(java.time.LocalDateTime.now());
 
@@ -421,6 +461,15 @@ public class PostService {
         }
     }
 
+    private String injectContentImage(String content, String contentImage) {
+        if (contentImage != null && !contentImage.isEmpty()) {
+            // Replace placeholder with markdown image syntax
+            return content.replace("{{content_image}}", 
+                "![Content Image](" + contentImage + ")");
+        }
+        return content;
+    }
+
     private PostDTO convertToDTO(Post post) {
         AuthorDTO authorDTO = post.getAuthor() != null 
             ? AuthorDTO.fromEntity(post.getAuthor())
@@ -432,13 +481,20 @@ public class PostService {
 
         String slug = post.getSlug();
         
+        // Inject content image if placeholder exists
+        String processedContent = injectContentImage(
+            post.getContent(), 
+            post.getContentImage()
+        );
+        
         return new PostDTO(
             post.getId().toString(),
             post.getTitle(),
             slug,
-            post.getContent(),
+            processedContent,  // Use processed content instead of raw content
             post.getExcerpt(),
             post.getCoverImage(),
+            post.getContentImage(),
             post.getPublishedAt() != null ? post.getPublishedAt().toString() : null,
             post.getScheduledAt() != null ? post.getScheduledAt().toString() : null,
             post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null,

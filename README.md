@@ -867,15 +867,7 @@ Now we continue with more content...
 
 ## 📝 License
 
-[Add your license here]
-
-## 🤝 Contributing
-
-[Add contribution guidelines]
-
-## 📧 Contact
-
-[Add contact information]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 

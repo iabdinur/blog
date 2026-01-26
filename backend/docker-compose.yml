@@ -1,35 +1,53 @@
+version: '3.8'
+
 services:
-  db:
-    container_name: postgres
-    image: postgres:latest
+  postgres:
+    image: postgres:17-alpine
+    container_name: blog-postgres
     environment:
+      POSTGRES_DB: blog
       POSTGRES_USER: iabdinur
       POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - db:/data/postgres
-    ports:
-      - "5332:5432"
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iabdinur"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - db
-    restart: unless-stopped
+      - blog-network
 
-  blog-api:
-    container_name: blog-api
-    image: iabdinur/blog-api
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/blog
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blog
+      SPRING_DATASOURCE_USERNAME: iabdinur
+      SPRING_DATASOURCE_PASSWORD: password
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_SES_FROM_EMAIL: ${AWS_SES_FROM_EMAIL}
     ports:
-      - "8088:8080"
-    networks:
-      - db
+      - "8080:8080"
     depends_on:
-      - db
+      postgres:
+        condition: service_healthy
+    networks:
+      - blog-network
     restart: unless-stopped
-
-networks:
-  db:
-    driver: bridge
 
 volumes:
-  db:
+  postgres_data:
+
+networks:
+  blog-network:
+    driver: bridge

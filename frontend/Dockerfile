@@ -1,5 +1,5 @@
 # Multi-stage build for React application
-FROM node:20-alpine AS build
+FROM node:23-alpine AS build
 
 # Accept build argument for API base URL
 ARG api_base_url

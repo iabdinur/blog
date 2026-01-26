@@ -433,7 +433,7 @@ blog/
 
 ### Prerequisites
 
-- **Node.js** 20+ and npm
+- **Node.js** 23+ and npm
 - **Java** 21+
 - **Maven** 3.8+
 - **PostgreSQL** 17.4+

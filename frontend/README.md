@@ -6,7 +6,7 @@ React + TypeScript frontend application for the blog platform, built with Vite, 
 
 ### Prerequisites
 
-- **Node.js** 20+
+- **Node.js** 23+
 - **npm** or **yarn**
 
 ### Installation

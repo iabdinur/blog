@@ -30,6 +30,7 @@
         <!-- Docker -->
         <docker.registry>docker.io</docker.registry>
         <docker.username>iabdinur</docker.username>
+        <docker.image.tag>${project.version}</docker.image.tag>
 
         <jsonwebtoken.version>0.12.6</jsonwebtoken.version>
     </properties>
@@ -236,9 +237,8 @@
                         </platforms>
                     </from>
                     <to>
-                        <image>${docker.registry}/${docker.username}/${project.artifactId}</image>
+                        <image>${docker.registry}/${docker.username}/${project.artifactId}:${docker.image.tag}</image>
                         <tags>
-                            <tag>${project.version}</tag>
                             <tag>latest</tag>
                         </tags>
                     </to>

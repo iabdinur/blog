@@ -62,13 +62,11 @@ jobs:
       - name: Build Package Push with Maven
         run: mvn -ntp -B verify -Ddocker.image.tag=${{steps.build-number.outputs.BUILD_NUMBER}} jib:build
         env:
-          SPRING_PROFILES_ACTIVE: prod
-          # Override RDS variables to point to test container
-          RDS_HOSTNAME: localhost
-          RDS_PORT: 5432
-          RDS_DB_NAME: blog_test
-          RDS_USERNAME: blog_user
-          RDS_PASSWORD: password
+          # Use default profile (not prod) - application.yaml already has optional AWS credentials
+          # Override database connection to use test container
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/blog_test
+          SPRING_DATASOURCE_USERNAME: blog_user
+          SPRING_DATASOURCE_PASSWORD: password
       - name: Send Slack Message
         run: >
           curl -X POST -H 'Content-type: application/json' 
@@ -96,7 +94,7 @@ jobs:
           version_label: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           version_description: ${{ github.SHA }}
           region: ${{ secrets.EB_REGION }}
-          deployment_package: ../Dockerrun.aws.json
+          deployment_package: Dockerrun.aws.json
       - name: Send Slack Message
         run: >
           curl -X POST -H 'Content-type: application/json' 

@@ -11,7 +11,7 @@ export const DraftsList = () => {
   const toast = useToast()
   const textColor = useColorModeValue('gray.900', 'gray.100')
 
-  const posts = data?.posts || []
+  const posts = (data as any)?.posts || []
 
   // Show error message if API call failed
   if (error) {

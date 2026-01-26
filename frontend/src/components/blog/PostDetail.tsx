@@ -30,7 +30,7 @@ export const PostDetail = ({ post }: PostDetailProps) => {
   // Filter out the current post and take up to 3 for tab posts
   // Also filter out articles without valid slugs to prevent navigation errors
   const tabPosts = tabPostsData?.posts
-    ?.filter(article => {
+    ?.filter((article: Post) => {
       // Ensure article has a valid slug (not empty, not undefined, and not the literal string "{slug}")
       const hasValidSlug = article.slug && 
                           article.slug.trim() !== '' && 
@@ -204,7 +204,7 @@ export const PostDetail = ({ post }: PostDetailProps) => {
           <Text>Failed to load posts.</Text>
         ) : tabPosts.length > 0 ? (
           <VStack spacing={4} align="stretch">
-            {tabPosts.map((article) => {
+            {tabPosts.map((article: Post) => {
               // Double-check slug is valid before rendering link
               if (!article.slug || article.slug === '{slug}' || article.slug === '%7Bslug%7D') {
                 return null

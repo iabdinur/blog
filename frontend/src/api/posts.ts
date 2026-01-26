@@ -81,18 +81,6 @@ export const useDrafts = (params?: { page?: number; limit?: number }) => {
     queryFn: () => postsApi.getDrafts(params),
     enabled: isAuthenticated, // Only fetch when authenticated
     retry: false, // Don't retry on auth errors
-    onError: (error) => { // Added error handling
-      console.error('Error fetching drafts:', error)
-    },
-    onSuccess: (data) => {
-      console.log('Drafts loaded successfully:', data)
-      console.log('Number of drafts:', data?.posts?.length || 0)
-      if (data?.posts) {
-        data.posts.forEach((post: any) => {
-          console.log(`Post: ${post.title}, Scheduled: ${post.scheduledAt}`)
-        })
-      }
-    },
   })
 }
 

@@ -56,26 +56,34 @@ public class SesEmailService implements EmailService {
         // Initialize Thymeleaf template engine
         this.templateEngine = initializeTemplateEngine();
         
-        if (enabled && !awsAccessKeyId.isEmpty() && !awsSecretAccessKey.isEmpty()) {
+        if (enabled) {
             try {
-                AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                    awsAccessKeyId,
-                    awsSecretAccessKey
-                );
+                var builder = SesClient.builder()
+                        .region(Region.of(awsRegion));
+
+                if (!awsAccessKeyId.isEmpty() && !awsSecretAccessKey.isEmpty()) {
+                    // Use explicit credentials if provided (for local dev)
+                    AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
+                        awsAccessKeyId,
+                        awsSecretAccessKey
+                    );
+                    builder.credentialsProvider(StaticCredentialsProvider.create(awsCredentials));
+                }
+                // If credentials are empty, SDK will automatically use default credential chain
+                // which includes: environment variables, IAM roles, etc.
                 
-                this.sesClient = SesClient.builder()
-                    .region(Region.of(awsRegion))
-                    .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
-                    .build();
+                this.sesClient = builder.build();
                 
-                logger.info("SES Email Service initialized successfully");
+                String credentialSource = !awsAccessKeyId.isEmpty() 
+                    ? "explicit credentials" 
+                    : "IAM role/default credential chain";
+                logger.info("SES Email Service initialized successfully (using {})", credentialSource);
             } catch (Exception e) {
                 logger.error("Failed to initialize SES client", e);
                 this.sesClient = null;
             }
         } else {
-            logger.warn("Email service is disabled or AWS credentials are not configured. " +
-                       "Emails will be logged to console only.");
+            logger.warn("Email service is disabled. Emails will be logged to console only.");
             this.sesClient = null;
         }
     }

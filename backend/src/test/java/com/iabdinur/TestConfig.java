@@ -1,30 +1,50 @@
 package com.iabdinur;
 
-import com.iabdinur.service.S3Service;
-import com.iabdinur.s3.S3Buckets;
-import org.mockito.Mockito;
+import com.iabdinur.service.EmailService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import software.amazon.awssdk.services.s3.S3Client;
 
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+/**
+ * Test configuration for mocking external services
+ */
 @TestConfiguration
 public class TestConfig {
-    // PasswordEncoder is already provided by SecurityConfig, no need to override
 
+    /**
+     * Mock EmailService to avoid actual AWS SES calls during tests
+     */
     @Bean
     @Primary
-    public S3Client s3Client() {
-        // Provide a mock S3Client for tests when AWS credentials are not configured
-        return Mockito.mock(S3Client.class);
-    }
-
-    @Bean
-    @Primary
-    public S3Service s3Service(S3Client s3Client, S3Buckets s3Buckets) {
-        // Provide S3Service for tests
-        return new S3Service(s3Client, s3Buckets);
+    public EmailService mockEmailService() {
+        EmailService mock = mock(EmailService.class);
+        
+        // Mock sendVerificationCode to log instead of sending
+        doAnswer(invocation -> {
+            String to = invocation.getArgument(0);
+            String code = invocation.getArgument(1);
+            int expiresInMinutes = invocation.getArgument(2);
+            System.out.println("MOCK EMAIL: Verification code " + code + 
+                             " sent to " + to + 
+                             " (expires in " + expiresInMinutes + " min)");
+            return null;
+        }).when(mock).sendVerificationCode(anyString(), anyString(), anyInt());
+        
+        // Mock sendPostNotification to log instead of sending
+        doAnswer(invocation -> {
+            String to = invocation.getArgument(0);
+            String postTitle = invocation.getArgument(1);
+            String postSlug = invocation.getArgument(2);
+            String postExcerpt = invocation.getArgument(3);
+            System.out.println("MOCK EMAIL: Post notification for '" + postTitle + 
+                             "' sent to " + to);
+            return null;
+        }).when(mock).sendPostNotification(anyString(), anyString(), anyString(), anyString());
+        
+        return mock;
     }
 }

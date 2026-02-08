@@ -2,7 +2,6 @@ package com.iabdinur.config;
 
 import com.iabdinur.s3.S3Buckets;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -19,23 +18,28 @@ public class S3Config {
     @Value("${aws.secret-access-key:}")
     private String awsSecretAccessKey;
 
-    @Value("${aws.region:us-east-1}")
+    @Value("${aws.region:us-east-2}")
     private String awsRegion;
 
     @Bean
-    @ConditionalOnExpression("!'${aws.access-key-id:}'.isEmpty() && !'${aws.secret-access-key:}'.isEmpty()")
     public S3Client s3Client() {
-        // Only create bean if credentials are provided (non-empty)
-        // Tests will provide a mock S3Client via TestConfig
-        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-            awsAccessKeyId,
-            awsSecretAccessKey
-        );
+        // If explicit credentials are provided, use them (for local dev)
+        // Otherwise, use default credential chain (IAM roles for production)
+        var builder = S3Client.builder()
+                .region(Region.of(awsRegion));
 
-        return S3Client.builder()
-            .region(Region.of(awsRegion))
-            .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
-            .build();
+        if (!awsAccessKeyId.isEmpty() && !awsSecretAccessKey.isEmpty()) {
+            // Use explicit credentials if provided
+            AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
+                awsAccessKeyId,
+                awsSecretAccessKey
+            );
+            builder.credentialsProvider(StaticCredentialsProvider.create(awsCredentials));
+        }
+        // If credentials are empty, SDK will automatically use default credential chain
+        // which includes: environment variables, IAM roles, etc.
+
+        return builder.build();
     }
 
     @Bean

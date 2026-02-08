@@ -5,6 +5,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -16,6 +19,12 @@ import static org.mockito.Mockito.*;
 public class TestConfig {
 
     /**
+     * Store verification codes sent during tests
+     * Key: email, Value: verification code
+     */
+    public static final Map<String, String> VERIFICATION_CODES = new ConcurrentHashMap<>();
+
+    /**
      * Mock EmailService to avoid actual AWS SES calls during tests
      */
     @Bean
@@ -23,11 +32,15 @@ public class TestConfig {
     public EmailService mockEmailService() {
         EmailService mock = mock(EmailService.class);
         
-        // Mock sendVerificationCode to log instead of sending
+        // Mock sendVerificationCode to log and capture the code
         doAnswer(invocation -> {
             String to = invocation.getArgument(0);
             String code = invocation.getArgument(1);
             int expiresInMinutes = invocation.getArgument(2);
+            
+            // Store the code for test verification
+            VERIFICATION_CODES.put(to, code);
+            
             System.out.println("MOCK EMAIL: Verification code " + code + 
                              " sent to " + to + 
                              " (expires in " + expiresInMinutes + " min)");
@@ -46,5 +59,12 @@ public class TestConfig {
         }).when(mock).sendPostNotification(anyString(), anyString(), anyString(), anyString());
         
         return mock;
+    }
+    
+    /**
+     * Clear stored verification codes between tests
+     */
+    public static void clearVerificationCodes() {
+        VERIFICATION_CODES.clear();
     }
 }

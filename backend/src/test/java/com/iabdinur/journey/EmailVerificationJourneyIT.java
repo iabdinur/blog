@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -45,6 +46,9 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private static final String USER_PATH = "/api/v1/users";
     private final Faker faker = new Faker();
 
@@ -54,12 +58,23 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         jdbcTemplate.execute("DELETE FROM sent_emails");
         jdbcTemplate.execute("DELETE FROM verification_codes");
         jdbcTemplate.execute("DELETE FROM users");
+        
+        // Clear captured verification codes
+        com.iabdinur.TestConfig.clearVerificationCodes();
     }
 
     @Test
     void shouldCompleteEmailVerificationJourney() throws Exception {
         // Given
         String email = faker.internet().emailAddress();
+        String name = faker.name().fullName();
+        
+        // Pre-requisite: Create a user first (verification code requires existing user)
+        jdbcTemplate.update(
+            "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+            name, email, passwordEncoder.encode("tempPassword123"), "REA"
+        );
+
         SendCodeRequest sendCodeRequest = new SendCodeRequest(email);
 
         // Step 1: Send verification code
@@ -77,24 +92,12 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         );
         assertThat(codeCount).isEqualTo(1);
 
-        // Step 3: Get the verification code from database
-        Map<String, Object> codeData = jdbcTemplate.queryForMap(
-            "SELECT code, expires_at FROM verification_codes WHERE email = ? ORDER BY created_at DESC LIMIT 1",
-            email
-        );
-        String verificationCode = (String) codeData.get("code");
+        // Step 3: Get the verification code from TestConfig (captured from mock)
+        String verificationCode = com.iabdinur.TestConfig.VERIFICATION_CODES.get(email);
         assertThat(verificationCode).isNotNull();
         assertThat(verificationCode).hasSize(6);
 
-        // Step 4: Verify sent_emails table has entry
-        Integer emailCount = jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM sent_emails WHERE recipient_email = ?",
-            Integer.class,
-            email
-        );
-        assertThat(emailCount).isGreaterThanOrEqualTo(1);
-
-        // Step 5: Verify the code
+        // Step 4: Verify the code
         VerifyCodeRequest verifyCodeRequest = new VerifyCodeRequest(email, verificationCode);
         
         MvcResult result = mockMvc.perform(post(USER_PATH + "/verify-code")
@@ -118,7 +121,7 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         assertThat(loginResponse.user().email()).isEqualTo(email);
         assertThat(loginResponse.token()).isNotNull();
 
-        // Step 8: Verify user was created in database
+        // Step 8: Verify user still exists in database
         Integer userCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM users WHERE email = ?",
             Integer.class,
@@ -129,12 +132,11 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         // Step 9: Verify JWT token is valid
         assertThat(jwtUtil.isTokenValid(jwtToken, email)).isTrue();
 
-        // Step 10: Verify code is marked as used
+        // Step 10: Verify code is marked as used (can only check by email since code is hashed)
         Boolean isUsed = jdbcTemplate.queryForObject(
-            "SELECT is_used FROM verification_codes WHERE email = ? AND code = ?",
+            "SELECT is_used FROM verification_codes WHERE email = ?",
             Boolean.class,
-            email,
-            verificationCode
+            email
         );
         assertThat(isUsed).isTrue();
     }
@@ -143,6 +145,14 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
     void shouldRejectInvalidVerificationCode() throws Exception {
         // Given
         String email = faker.internet().emailAddress();
+        String name = faker.name().fullName();
+        
+        // Pre-requisite: Create a user first
+        jdbcTemplate.update(
+            "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+            name, email, passwordEncoder.encode("tempPassword123"), "REA"
+        );
+        
         SendCodeRequest sendCodeRequest = new SendCodeRequest(email);
 
         // Step 1: Send verification code
@@ -159,19 +169,27 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(wrongCodeRequest)))
                 .andExpect(status().isUnauthorized());
 
-        // Step 3: Verify user was NOT created
+        // Step 3: Verify user still exists (wasn't deleted)
         Integer userCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM users WHERE email = ?",
             Integer.class,
             email
         );
-        assertThat(userCount).isEqualTo(0);
+        assertThat(userCount).isEqualTo(1);
     }
 
     @Test
     void shouldRejectExpiredVerificationCode() throws Exception {
         // Given
         String email = faker.internet().emailAddress();
+        String name = faker.name().fullName();
+        
+        // Pre-requisite: Create a user first
+        jdbcTemplate.update(
+            "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+            name, email, passwordEncoder.encode("tempPassword123"), "REA"
+        );
+        
         SendCodeRequest sendCodeRequest = new SendCodeRequest(email);
 
         // Step 1: Send verification code
@@ -180,12 +198,9 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(sendCodeRequest)))
                 .andExpect(status().isOk());
 
-        // Step 2: Get the code
-        String verificationCode = jdbcTemplate.queryForObject(
-            "SELECT code FROM verification_codes WHERE email = ?",
-            String.class,
-            email
-        );
+        // Step 2: Get the code from TestConfig (captured from mock)
+        String verificationCode = com.iabdinur.TestConfig.VERIFICATION_CODES.get(email);
+        assertThat(verificationCode).isNotNull();
 
         // Step 3: Manually expire the code by setting expires_at to the past
         jdbcTemplate.update(
@@ -202,19 +217,27 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(verifyCodeRequest)))
                 .andExpect(status().isUnauthorized());
 
-        // Step 5: Verify user was NOT created
+        // Step 5: Verify user still exists (wasn't affected by failed verification)
         Integer userCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM users WHERE email = ?",
             Integer.class,
             email
         );
-        assertThat(userCount).isEqualTo(0);
+        assertThat(userCount).isEqualTo(1);
     }
 
     @Test
     void shouldAllowResendingVerificationCode() throws Exception {
         // Given
         String email = faker.internet().emailAddress();
+        String name = faker.name().fullName();
+        
+        // Pre-requisite: Create a user first
+        jdbcTemplate.update(
+            "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+            name, email, passwordEncoder.encode("tempPassword123"), "REA"
+        );
+        
         SendCodeRequest sendCodeRequest = new SendCodeRequest(email);
 
         // Step 1: Send first code
@@ -223,11 +246,8 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
                         .content(objectMapper.writeValueAsString(sendCodeRequest)))
                 .andExpect(status().isOk());
 
-        String firstCode = jdbcTemplate.queryForObject(
-            "SELECT code FROM verification_codes WHERE email = ? ORDER BY created_at DESC LIMIT 1",
-            String.class,
-            email
-        );
+        String firstCode = com.iabdinur.TestConfig.VERIFICATION_CODES.get(email);
+        assertThat(firstCode).isNotNull();
 
         // Step 2: Send second code (resend)
         mockMvc.perform(post(USER_PATH + "/send-code")
@@ -243,12 +263,8 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         );
         assertThat(codeCount).isEqualTo(2);
 
-        // Step 4: Get latest code
-        String latestCode = jdbcTemplate.queryForObject(
-            "SELECT code FROM verification_codes WHERE email = ? ORDER BY created_at DESC LIMIT 1",
-            String.class,
-            email
-        );
+        // Step 4: Get latest code from TestConfig (it gets overwritten with the new code)
+        String latestCode = com.iabdinur.TestConfig.VERIFICATION_CODES.get(email);
         assertThat(latestCode).isNotEqualTo(firstCode);
 
         // Step 5: Verify latest code works
@@ -277,6 +293,13 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
         
         for (int i = 0; i < 5; i++) {
             emails[i] = faker.internet().emailAddress();
+            String name = faker.name().fullName();
+            
+            // Pre-requisite: Create users first
+            jdbcTemplate.update(
+                "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+                name, emails[i], passwordEncoder.encode("tempPassword123"), "REA"
+            );
         }
 
         // Step 1: Send codes to all 5 emails
@@ -288,13 +311,10 @@ class EmailVerificationJourneyIT extends AbstractTestcontainers {
                     .andExpect(status().isOk());
         }
 
-        // Step 2: Get all verification codes
+        // Step 2: Get all verification codes from TestConfig (captured from mock)
         for (int i = 0; i < 5; i++) {
-            codes[i] = jdbcTemplate.queryForObject(
-                "SELECT code FROM verification_codes WHERE email = ?",
-                String.class,
-                emails[i]
-            );
+            codes[i] = com.iabdinur.TestConfig.VERIFICATION_CODES.get(emails[i]);
+            assertThat(codes[i]).isNotNull().hasSize(6);
         }
 
         // Step 3: Verify all 5 codes

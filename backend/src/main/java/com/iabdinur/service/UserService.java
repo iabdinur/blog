@@ -15,11 +15,15 @@ import com.iabdinur.model.VerificationCode;
 import com.iabdinur.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -253,6 +257,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public byte[] getUserProfileImage(String email) {
+        ResponseEntity<byte[]> response = getUserProfileImageBytes(email);
+        return response.getBody() == null ? new byte[0] : response.getBody();
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> getUserProfileImageBytes(String email) {
         if (s3Service == null) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, 
                 "S3 service is not configured. Please provide AWS credentials.");
@@ -264,8 +274,26 @@ public class UserService {
         if (user.getProfileImageId() == null || user.getProfileImageId().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile image not found");
         }
-        
-        return s3Service.getObject(user.getProfileImageId());
+
+        ResponseBytes<GetObjectResponse> objectBytes = s3Service.getObjectBytes(user.getProfileImageId());
+        String contentType = objectBytes.response().contentType();
+
+        MediaType mediaType;
+        try {
+            mediaType = (contentType == null || contentType.isBlank())
+                    ? MediaType.APPLICATION_OCTET_STREAM
+                    : MediaType.parseMediaType(contentType);
+        } catch (Exception ignored) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        return ResponseEntity.ok()
+                // Avoid stale avatars due to browser caching of a stable URL
+                .header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .contentType(mediaType)
+                .body(objectBytes.asByteArray());
     }
 
     @Transactional

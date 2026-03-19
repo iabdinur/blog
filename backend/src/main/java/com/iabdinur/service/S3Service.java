@@ -3,9 +3,11 @@ package com.iabdinur.service;
 import com.iabdinur.s3.S3Buckets;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
@@ -43,6 +45,10 @@ public class S3Service {
     }
 
     public byte[] getObject(String key) {
+        return getObjectBytes(key).asByteArray();
+    }
+
+    public ResponseBytes<GetObjectResponse> getObjectBytes(String key) {
         if (!isS3Enabled()) {
             throw new IllegalStateException("S3 is not configured. Please provide AWS credentials.");
         }
@@ -53,7 +59,7 @@ public class S3Service {
             .build();
 
         try {
-            return s3Client.getObjectAsBytes(getObjectRequest).asByteArray();
+            return s3Client.getObjectAsBytes(getObjectRequest);
         } catch (S3Exception e) {
             throw new RuntimeException("Failed to retrieve object from S3: " + e.getMessage(), e);
         }

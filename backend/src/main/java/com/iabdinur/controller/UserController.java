@@ -84,10 +84,10 @@ public class UserController {
 
     @GetMapping(
             value = "/{email}/profile-image",
-            produces = MediaType.IMAGE_JPEG_VALUE
+            produces = MediaType.ALL_VALUE
     )
-    public byte[] getUserProfileImage(@PathVariable("email") String email) {
-        return userService.getUserProfileImage(email);
+    public ResponseEntity<byte[]> getUserProfileImage(@PathVariable("email") String email) {
+        return userService.getUserProfileImageBytes(email);
     }
 
     @DeleteMapping("/{email}/profile-image")

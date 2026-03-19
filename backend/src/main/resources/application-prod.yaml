@@ -35,7 +35,7 @@ aws:
   region: ${AWS_REGION:us-east-2}
   s3:
     buckets:
-      users: ${S3_BUCKET:users}
+      users: ${S3_BUCKET:}
 
 # Email Configuration
 app:

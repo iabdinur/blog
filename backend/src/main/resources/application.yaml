@@ -17,10 +17,10 @@ server:
 aws:
   access-key-id: ${AWS_ACCESS_KEY_ID:}
   secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
-  region: ${AWS_REGION:us-east-1}
+  region: ${AWS_REGION:us-east-2}
   s3:
     buckets:
-      users: ${S3_BUCKET:users}
+      users: ${S3_BUCKET:}
 
 # Email Configuration
 app:

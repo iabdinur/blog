@@ -5,10 +5,13 @@ import { PostList } from '@/components/blog/PostList'
 import { Avatar } from '@/components/ui/Avatar'
 import { Layout } from '@/components/layout/Layout'
 import { FaGithub, FaLinkedin, FaRss } from 'react-icons/fa'
+import { useAvatarStore } from '@/store/useAvatarStore'
+import { API_BASE_URL } from '@/api/client'
 
 export const Author = () => {
   // Hardcode username for personal blog
   const username = 'iabdinur'
+  const avatarVersion = useAvatarStore((s) => s.avatarVersion)
   const { data: author, isLoading: authorLoading } = useAuthor(username)
   const { data: postsData, isLoading: postsLoading } = usePosts({ author: author?.username, limit: 12 })
 
@@ -52,7 +55,7 @@ export const Author = () => {
               name={author.name} 
               src={
                 author.email 
-                  ? `/api/v1/users/${encodeURIComponent(author.email)}/profile-image`
+                  ? `${API_BASE_URL}/users/${encodeURIComponent(author.email)}/profile-image?v=${avatarVersion}`
                   : undefined
               }
               size="lg"

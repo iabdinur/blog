@@ -27,6 +27,7 @@ import { Layout } from '@/components/layout/Layout'
 import { apiClient, changePassword } from '@/api/client'
 import { uploadUserProfileImage, getUserProfileImage, deleteUserProfileImage } from '@/api/client'
 import { colorPalettes } from '@/compositions/lib/color-palettes'
+import { useAvatarStore } from '@/store/useAvatarStore'
 
 interface UserProfile {
   id: string
@@ -41,6 +42,7 @@ interface UserProfile {
 export const Profile = () => {
   const navigate = useNavigate()
   const toast = useToast()
+  const bumpAvatarVersion = useAvatarStore((s) => s.bumpAvatarVersion)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -153,6 +155,7 @@ export const Profile = () => {
         status: 'success',
         duration: 3000,
       })
+      bumpAvatarVersion()
       setAvatarFile(null)
       // Reload profile image
       try {

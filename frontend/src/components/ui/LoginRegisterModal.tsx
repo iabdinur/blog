@@ -33,6 +33,7 @@ import { apiClient } from '@/api/client'
 import { FaCamera } from 'react-icons/fa'
 import { useUIStore } from '@/store/useUIStore'
 import { isAuthor } from '@/utils/auth'
+import { useAvatarStore } from '@/store/useAvatarStore'
 
 interface LoginRegisterModalProps {
   isOpen: boolean
@@ -42,6 +43,7 @@ interface LoginRegisterModalProps {
 
 export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegisterModalProps) => {
   const navigate = useNavigate()
+  const bumpAvatarVersion = useAvatarStore((s) => s.bumpAvatarVersion)
   const [tabIndex, setTabIndex] = useState(0)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -95,6 +97,7 @@ export const LoginRegisterModal = ({ isOpen, onClose, onSuccess }: LoginRegister
               Authorization: `Bearer ${token}`,
             },
           })
+          bumpAvatarVersion()
         } catch (error) {
           console.error('Failed to upload profile image:', error)
           // Continue even if image upload fails

@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Get base URL from env or use default, and ensure it includes /api/v1
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const API_BASE_URL = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`
+export const API_BASE_URL = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

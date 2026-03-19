@@ -23,14 +23,16 @@ import { useUIStore } from '@/store/useUIStore'
 import { LoginRegisterModal } from '@/components/ui/LoginRegisterModal'
 import { Avatar } from '@/components/ui/Avatar'
 import { useState, useEffect } from 'react'
-import { apiClient } from '@/api/client'
+import { apiClient, API_BASE_URL } from '@/api/client'
 import { decodeJWT, getUserEmailFromToken } from '@/utils/auth'
 import { useTags } from '@/api/tags'
 import { Tag } from '@/types'
+import { useAvatarStore } from '@/store/useAvatarStore'
 
 export const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure()
   const { setNewsletterPopupOpen, setSearchPopupOpen } = useUIStore()
+  const avatarVersion = useAvatarStore((s) => s.avatarVersion)
   const navigate = useNavigate()
   const location = useLocation()
   const bg = useColorModeValue('white', 'gray.900')
@@ -281,7 +283,11 @@ export const Navbar = () => {
                   <Avatar
                     size="sm"
                     name={userName || userEmail || 'User'}
-                    src={userEmail ? `/api/v1/users/${encodeURIComponent(userEmail)}/profile-image` : undefined}
+                    src={
+                      userEmail
+                        ? `${API_BASE_URL}/users/${encodeURIComponent(userEmail)}/profile-image?v=${avatarVersion}`
+                        : undefined
+                    }
                     onError={() => {
                       // Silently fail if image can't load
                     }}

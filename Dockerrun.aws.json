@@ -3,7 +3,7 @@
   "containerDefinitions": [
     {
       "name": "blog-api",
-      "image": "iabdinur/blog-api:19.03.2026.05.05.51",
+      "image": "iabdinur/blog-api:20.03.2026.04.41.55",
       "essential": true,
       "memory": 512,
       "portMappings": [

@@ -35,7 +35,8 @@ spring:
 3. **Run Migrations**:
 Flyway will automatically run migrations on startup from `src/main/resources/db/migration/`:
 - `V1__Initial_schema.sql` - Creates all database tables
-- `V2__Seed_mock_data.sql` - Seeds initial data
+- `V2__Seed_initial_user.sql` - Legacy mock seed data (kept for migration history compatibility)
+- `V3__Seed_topic_tags.sql` - Resets content and seeds professional baseline data
 
 4. **Start Application**:
 ```bash
@@ -199,6 +200,7 @@ Database migrations are managed by Flyway:
 - Migrations are located in `src/main/resources/db/migration/`
 - Migrations run automatically on application startup
 - Migration files follow naming: `V{version}__{description}.sql`
+- Production note: existing environments include `V2` in `flyway_schema_history`; `V3` provides the clean baseline without breaking Flyway validation.
 
 ## 🔐 Security
 

@@ -293,7 +293,8 @@ blog/
 │   │   │   └── resources/
 │   │   │       ├── db/migration/ # Flyway migrations
 │   │   │       │   ├── V1__Initial_schema.sql
-│   │   │       │   └── V2__Seed_mock_data.sql
+│   │   │       │   ├── V2__Seed_mock_data.sql
+│   │   │       │   └── V3__Reset_seed_to_professional_baseline.sql
 │   │   │       ├── templates/    # Email templates
 │   │   │       │   └── email/
 │   │   │       │       ├── verification.html
@@ -494,7 +495,8 @@ aws:
 4. **Run Migrations** (automatic on startup):
    - Flyway will automatically run migrations from `src/main/resources/db/migration/`
    - V1: Creates all tables
-   - V2: Seeds mock data
+   - V2: Legacy mock seed data (kept for migration history compatibility)
+   - V3: Resets to professional baseline (clears content, seeds admin user and topic tags)
 
 5. **Start Backend**:
 ```bash

@@ -7,6 +7,8 @@ import { Series } from './pages/Series'
 import { Search } from './pages/Search'
 import { Newsletter } from './pages/Newsletter'
 import { About } from './pages/About'
+import { Privacy } from './pages/Privacy'
+import { Terms } from './pages/Terms'
 import { NotFound } from './pages/NotFound'
 import { Profile } from './pages/Profile'
 import { AdminLogin } from './pages/author/Login'
@@ -27,6 +29,8 @@ function App() {
       <Route path="/search" element={<Search />} />
       <Route path="/newsletter" element={<Newsletter />} />
       <Route path="/about" element={<About />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/profile" element={<Profile />} />
       {/* Login route - works for both Authors and Readers */}
       <Route path="/login" element={<AdminLogin />} />

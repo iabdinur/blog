@@ -1,4 +1,4 @@
-import { VStack, Heading, Text, Box, Link, HStack, Icon, Input, Button } from '@chakra-ui/react'
+import { VStack, Heading, Text, Box, Link, HStack, Icon, Input, Button, UnorderedList, ListItem } from '@chakra-ui/react'
 import { Layout } from '@/components/layout/Layout'
 import { FaLinkedin, FaGithub, FaEnvelope, FaGlobe } from 'react-icons/fa'
 
@@ -9,15 +9,19 @@ export const About = () => {
         <Heading fontSize="36px">Me</Heading>
         
         <Text fontSize="18px" lineHeight="tall">
-          I am Ibrahim Abdinur. I am a software engineer who likes building practical systems and writing about what I learn along the way.
+          I am Ibrahim Abdinur, a software engineer and Master of Computer Science candidate committed to building practical, human-centered systems that create real value.
         </Text>
         
         <Text fontSize="18px" lineHeight="tall">
-          This blog is where I share notes from projects, coursework, and the parts of software engineering that only start to make sense once you have broken them a few times and fixed them again.
+          This blog is a space to think and document what I build, especially the parts of software engineering that only start to make sense once you have broken them a few times and fixed them again.
         </Text>
         
         <Text fontSize="18px" lineHeight="tall">
-          If you want to connect, reach out on LinkedIn.
+          I care deeply about clear communication, accessible learning, and sharing knowledge in ways that help others grow with confidence.
+        </Text>
+        
+        <Text fontSize="18px" lineHeight="tall">
+          If you'd like to connect, reach out on LinkedIn.
         </Text>
 
         <Box 
@@ -30,16 +34,28 @@ export const About = () => {
           <Heading fontSize="24px" mb={4}>
             What you will find here
           </Heading>
-          <VStack align="stretch" spacing={2}>
-            <Text fontSize="18px">• Backend engineering notes in plain language</Text>
-            <Text fontSize="18px">• Java and Spring Boot writeups</Text>
-            <Text fontSize="18px">• Cloud and DevOps workflows that actually ship software</Text>
-            <Text fontSize="18px">• System design fundamentals and patterns</Text>
-            <Text fontSize="18px">• Interview preparation when I am in that season</Text>
-            <Text fontSize="18px">• UIUC Master of Computer Science reflections and course reviews</Text>
-          </VStack>
+          <UnorderedList
+            spacing={2}
+            pl={5}
+            ml={0}
+            lineHeight="tall"
+            sx={{
+              '& > li': {
+                fontSize: '18px',
+                '&::marker': {
+                  fontSize: '14px',
+                },
+              },
+            }}
+          >
+            <ListItem>Backend engineering concepts</ListItem>
+            <ListItem>Java and Spring Boot projects</ListItem>
+            <ListItem>Cloud and DevOps workflows</ListItem>
+            <ListItem>System design notes</ListItem>
+            <ListItem>Reflections from the UIUC MCS journey</ListItem>
+          </UnorderedList>
           <Text mt={4} fontSize="18px" fontWeight="bold">
-            No fluff. No recycled motivation posts. Just work I can stand behind.
+            No fluff. Just thoughtful, practical writing with useful resources and projects I can stand behind.
           </Text>
         </Box>
 
@@ -54,29 +70,14 @@ export const About = () => {
             My journey
           </Heading>
           <Text fontSize="18px">
-            My interest in software started early and stuck. I began with beginner friendly tools and small projects, then kept following the curiosity into deeper concepts: data structures, APIs, distributed systems, and cloud infrastructure.
+            I came to software development by a nontraditional route. My academic background is in chemical engineering (MEng), and it taught me to approach complex problems with systems thinking, structure, and curiosity.
           </Text>
           <Text mt={4} fontSize="18px">
-            Over time, I learned that the fastest way to grow is to build in public, write down what you learned, and tighten your thinking until you can explain it clearly. That is the habit behind this site.
+            The transition into software was not straightforward, but it was intentional. I carried forward an engineering mindset and built technical depth through steady practice, graduate study, and hands-on projects. Over time, I learned to build human-centered systems.
           </Text>
-        </Box>
-
-        <Box 
-          borderTop="1px" 
-          borderColor="gray.200" 
-          _dark={{ borderColor: 'gray.700' }}
-        />
-
-        <Box>
-          <Heading fontSize="24px" mb={4}>
-            What I am building now
-          </Heading>
-          <VStack align="stretch" spacing={2}>
-            <Text fontSize="18px">• Writing more consistently</Text>
-            <Text fontSize="18px">• Strengthening my backend and cloud depth</Text>
-            <Text fontSize="18px">• Documenting what I learn in the UIUC MCS program</Text>
-            <Text fontSize="18px">• Building projects that are simple, usable, and finished</Text>
-          </VStack>
+          <Text mt={4} fontSize="18px">
+            Today, I focus on developing reliable systems with clarity and care. I also share what I learn so that others from nontraditional backgrounds can navigate their own path with less uncertainty.
+          </Text>
         </Box>
 
         <Box 
@@ -90,7 +91,7 @@ export const About = () => {
             Outside tech
           </Heading>
           <Text fontSize="18px">
-            When I am not coding, I am usually doing something active or hands on. I like staying outdoors, training, reading, traveling when I can, and cooking.
+            I enjoy staying active, spending time outdoors, reading, traveling when I can, and cooking.
           </Text>
         </Box>
 
@@ -105,7 +106,7 @@ export const About = () => {
             Subscribe
           </Heading>
           <Text fontSize="18px">
-            If you want the new posts in one place, subscribe. Every time I publish, you will get it in your inbox.
+            If these notes are useful to you, subscribe and I'll send new posts directly to your inbox.
           </Text>
           
           <HStack mt={4}>

@@ -30,10 +30,10 @@ export const Footer = () => {
               <Link as={RouterLink} to="/archive" color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
                 Archive
               </Link>
-              <Link href="#" color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
+              <Link as={RouterLink} to="/privacy" color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
                 Privacy
               </Link>
-              <Link href="#" color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
+              <Link as={RouterLink} to="/terms" color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
                 Terms
               </Link>
             </HStack>

@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+*.log
+
+# Editor / tool directories
+.idea/
+.claude/
+.cursor/
+
+# Planning/working docs (not part of the published project)
+PLAN.md
+TASK.md

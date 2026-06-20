@@ -1,0 +1,63 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install content tooling
+        run: npm ci
+
+      - name: Validate content
+        run: npm run content:validate
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          # Bake real comment counts from GitHub Discussions into the content JSON.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GISCUS_REPO: ${{ github.repository }}
+          # Giscus + GoatCounter (set as repo variables to enable; safe to leave unset).
+          VITE_GISCUS_REPO: ${{ vars.GISCUS_REPO }}
+          VITE_GISCUS_REPO_ID: ${{ vars.GISCUS_REPO_ID }}
+          VITE_GISCUS_CATEGORY: ${{ vars.GISCUS_CATEGORY }}
+          VITE_GISCUS_CATEGORY_ID: ${{ vars.GISCUS_CATEGORY_ID }}
+          VITE_GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

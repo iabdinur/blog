@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Artificial Intelligence",
+    "slug": "ai",
+    "description": "Artificial Intelligence and Machine Learning articles"
+  },
+  {
+    "name": "DevOps",
+    "slug": "devops",
+    "description": "DevOps workflows and practices"
+  },
+  {
+    "name": "System Design",
+    "slug": "system-design",
+    "description": "System design fundamentals and patterns"
+  },
+  {
+    "name": "UIUC Master of Computer Science",
+    "slug": "uiuc-mcs",
+    "description": "UIUC Master of Computer Science reflections and course reviews"
+  },
+  {
+    "name": "Software Engineering",
+    "slug": "software-engineering",
+    "description": "Software engineering principles, practices, and methodologies"
+  }
+]

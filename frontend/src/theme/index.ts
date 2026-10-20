@@ -1,4 +1,8 @@
-import { extendTheme, type ThemeConfig } from '@chakra-ui/react'
+// Shared theme for blog.iabdinur.com, iabdinur.com and portfolio.iabdinur.com.
+// This file is the source of truth: edit it here, then run `npm run theme:sync`
+// in iabdinur.github.io and portfolio. Their `npm run deploy` refuses to publish
+// a copy that has drifted from this one.
+import { extendTheme, type StyleFunctionProps, type ThemeConfig } from '@chakra-ui/react'
 
 const config: ThemeConfig = {
   initialColorMode: 'light',
@@ -27,7 +31,7 @@ const theme = extendTheme({
     mono: `"Fira Code", "Consolas", "Monaco", monospace`,
   },
   styles: {
-    global: (props: any) => ({
+    global: (props: StyleFunctionProps) => ({
       body: {
         bg: props.colorMode === 'dark' ? 'gray.900' : 'white',
         color: props.colorMode === 'dark' ? 'gray.100' : 'gray.900',

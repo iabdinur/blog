@@ -10,3 +10,7 @@ node_modules
 # Planning/working docs (not part of the published project)
 PLAN.md
 TASK.md
+
+# Draft posts stay local: never built, never committed
+content/_drafts/*
+!content/_drafts/.gitkeep

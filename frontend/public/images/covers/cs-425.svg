@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-label="CS 425 26 Fall cover">
+  <rect width="1200" height="600" fill="#ffffff"/>
+  <g transform="translate(392,150)">
+    <!-- Illinois block I, drawn in a 100x120 box and scaled to 150x180 -->
+    <g transform="scale(1.5)">
+      <path d="M0 0H100V30H67V90H100V120H0V90H33V30H0Z" fill="#EB4D25"
+            stroke="#263855" stroke-width="5" stroke-linejoin="round"/>
+    </g>
+    <text x="180" y="86" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="92" fill="#263855">CS</text>
+    <text x="172" y="182" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="120" fill="#263855">425</text>
+    <text x="8" y="300" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="100" fill="#263855">26 Fall</text>
+  </g>
+</svg>

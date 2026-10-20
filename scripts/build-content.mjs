@@ -18,7 +18,32 @@ const loadSeries = () => {
   return JSON.parse(readFileSync(SERIES_FILE, 'utf8'))
 }
 
-const readingTime = (text) => Math.max(1, Math.round(text.trim().split(/\s+/).length / 200))
+// Reading time counts prose, not markup. Splitting raw markdown on whitespace counts
+// heading hashes, bullets, emphasis and every table pipe as words, which inflates a
+// post by 5-15% and can push it a whole minute over.
+const stripMarkdown = (md) =>
+  md
+    .replace(/```[\s\S]*?```/g, ' ') // fenced code blocks
+    .replace(/`[^`]*`/g, ' code ') // inline code counts as one word
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links keep their text, drop the URL
+    .replace(/^\s*\|.*\|\s*$/gm, (row) => row.replace(/\|/g, ' ')) // table cells
+    .replace(/^[\s|:-]+$/gm, ' ') // table separator rows
+    .replace(/^\s*[-*+]\s+/gm, ' ') // bullets
+    .replace(/^\s*\d+\.\s+/gm, ' ') // numbered list markers
+    .replace(/^#{1,6}\s+/gm, ' ') // headings
+    .replace(/^>\s?/gm, ' ') // blockquotes
+    .replace(/[*_~]/g, '') // emphasis markers
+
+const WORDS_PER_MINUTE = 200
+
+const readingTime = (text) => {
+  const words = stripMarkdown(text)
+    .trim()
+    .split(/\s+/)
+    .filter((w) => /[A-Za-z0-9]/.test(w)).length
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE))
+}
 
 const writeJson = (path, data) => {
   mkdirSync(dirname(path), { recursive: true })
@@ -49,14 +74,27 @@ const loadAuthors = () => {
   return authors
 }
 
-const loadPosts = (authors) => {
+// A post with a future date is scheduled, not published: it is validated and its author
+// is resolved (so a broken post fails now, not on its publish date), but it is left out
+// of the build until a run happens on or after that date. Rebuild to pick it up - a
+// static site has no clock of its own.
+const loadPosts = (authors, now = Date.now()) => {
   const posts = []
-  if (!existsSync(POSTS_DIR)) return posts
+  const scheduled = []
+  if (!existsSync(POSTS_DIR)) return { posts, scheduled }
   for (const file of readdirSync(POSTS_DIR).filter((f) => f.endsWith('.md'))) {
     const { data, content } = matter(readFileSync(join(POSTS_DIR, file), 'utf8'))
     if (data.draft === true) continue
     const author = authors[data.author]
     if (!author) throw new Error(`Post "${file}" references unknown author "${data.author}"`)
+    const publishedAt = new Date(data.date)
+    if (Number.isNaN(publishedAt.getTime())) {
+      throw new Error(`Post "${file}" has an invalid date "${data.date}"`)
+    }
+    if (publishedAt.getTime() > now) {
+      scheduled.push({ slug: data.slug, publishedAt })
+      continue
+    }
     const tagObjects = (data.tags ?? []).map((name) => {
       const slug = String(name).toLowerCase().trim().replace(/\s+/g, '-')
       return { id: slug, name: String(name), slug, postsCount: 0 }
@@ -69,7 +107,7 @@ const loadPosts = (authors) => {
       excerpt: data.excerpt ?? '',
       coverImage: data.coverImage ?? '',
       contentImage: data.contentImage ?? '',
-      publishedAt: new Date(data.date).toISOString(),
+      publishedAt: publishedAt.toISOString(),
       updatedAt: data.updated ? new Date(data.updated).toISOString() : undefined,
       author,
       tags: tagObjects,
@@ -82,7 +120,8 @@ const loadPosts = (authors) => {
     })
   }
   posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-  return posts
+  scheduled.sort((a, b) => a.publishedAt - b.publishedAt)
+  return { posts, scheduled }
 }
 
 // Fetch real comment counts from GitHub Discussions (giscus backend).
@@ -125,7 +164,7 @@ const fetchCommentCounts = async () => {
 
 const build = async () => {
   const authors = loadAuthors()
-  const posts = loadPosts(authors)
+  const { posts, scheduled } = loadPosts(authors)
 
   const commentCounts = await fetchCommentCounts()
   for (const post of posts) post.commentsCount = commentCounts[post.slug] ?? 0
@@ -174,6 +213,12 @@ const build = async () => {
   })
 
   console.log(`Built ${posts.length} posts, ${tags.length} tags, ${Object.keys(authors).length} authors → ${OUT}`)
+  if (scheduled.length) {
+    console.log(`Scheduled (held back until their date, rebuild to release):`)
+    for (const s of scheduled) {
+      console.log(`  ${s.publishedAt.toISOString().slice(0, 10)}  ${s.slug}`)
+    }
+  }
 }
 
 build().catch((err) => {

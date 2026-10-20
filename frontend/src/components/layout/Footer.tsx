@@ -38,7 +38,7 @@ export const Footer = () => {
               </Link>
             </HStack>
             <HStack spacing={4} justify="center">
-              <Link href="https://iabdinur.com" isExternal color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
+              <Link href="https://iabdinur.dev" isExternal color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>
                 <Icon as={FaRss} boxSize={5} />
               </Link>
               <Link href="https://github.com/iabdinur" isExternal color="gray.600" _dark={{ color: 'gray.400' }} _hover={{ color: 'gray.900', _dark: { color: 'gray.200' } }}>

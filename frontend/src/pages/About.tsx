@@ -112,7 +112,7 @@ export const About = () => {
             <Link href="https://www.linkedin.com/in/ibrahim-abdinur/" isExternal>
               <Icon as={FaLinkedin} boxSize={6} />
             </Link>
-            <Link href="https://iabdinur.com" isExternal>
+            <Link href="https://iabdinur.dev" isExternal>
               <Icon as={FaGlobe} boxSize={6} />
             </Link>
           </HStack>

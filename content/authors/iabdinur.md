@@ -6,7 +6,7 @@ bio: Software engineer writing about AI, software engineering, and graduate stud
 avatar: /images/authors/iabdinur.svg
 coverImage: ""
 location: ""
-website: iabdinur.com
+website: iabdinur.dev
 socialLinks:
   github: iabdinur
   linkedin: iabdinur

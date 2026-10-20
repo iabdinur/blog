@@ -1,7 +1,5 @@
-// Shared theme for blog.iabdinur.com, iabdinur.com and portfolio.iabdinur.com.
-// This file is the source of truth: edit it here, then run `npm run theme:sync`
-// in iabdinur.github.io and portfolio. Their `npm run deploy` refuses to publish
-// a copy that has drifted from this one.
+// Shared theme for blog.iabdinur.dev, iabdinur.dev and portfolio.iabdinur.dev.
+// Edit it here, then run `npm run theme:sync` in iabdinur.github.io and portfolio.
 import { extendTheme, type StyleFunctionProps, type ThemeConfig } from '@chakra-ui/react'
 
 const config: ThemeConfig = {

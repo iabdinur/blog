@@ -1,6 +1,6 @@
 # Ibrahim Abdinur's Blog
 
-This is the source code for my blog at [blog.iabdinur.com](https://blog.iabdinur.com).
+This is the source code for my blog at [blog.iabdinur.dev](https://blog.iabdinur.dev).
 It's a personal blog where I write about AI, software engineering, and lessons from
 graduate studies.
 
@@ -28,7 +28,7 @@ reading progress, dark mode, reading list — and dropped everything that needed
 
 ## The previous version
 
-The first version of this blog (which ran at iabdinur.com) was a full-stack platform,
+The first version of this blog was a full-stack platform,
 not a static site. The frontend was the same React + TypeScript + Chakra UI app, but
 behind it sat a Spring Boot 3 / Java 21 REST API backed by PostgreSQL, with AWS S3 for
 image storage and AWS SES for transactional email. It did everything a hosted blog does:
@@ -136,7 +136,7 @@ backend, and both degrade gracefully (sort by 0, no views) when unconfigured.
 
 ## Custom domain
 
-`frontend/public/CNAME` contains `blog.iabdinur.com`. Point a DNS `CNAME` record for
+`frontend/public/CNAME` contains `blog.iabdinur.dev`. Point a DNS `CNAME` record for
 that subdomain at `iabdinur.github.io`, and set the custom domain in the repo's Pages
 settings.
 
